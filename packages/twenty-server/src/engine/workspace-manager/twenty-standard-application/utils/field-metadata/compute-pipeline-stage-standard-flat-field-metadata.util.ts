@@ -188,23 +188,6 @@ export const buildPipelineStageStandardFlatFieldMetadatas = ({
     twentyStandardApplicationId,
     now,
   }),
-  pipelineId: createStandardFieldFlatMetadata({
-    objectName,
-    workspaceId,
-    context: {
-      fieldName: 'pipelineId',
-      type: FieldMetadataType.UUID,
-      label: i18nLabel(msg`Pipeline id`),
-      description: i18nLabel(msg`Pipeline id foreign key`),
-      icon: 'IconLayoutKanban',
-      isSystem: true,
-      isNullable: true,
-    },
-    standardObjectMetadataRelatedEntityIds,
-    dependencyFlatEntityMaps,
-    twentyStandardApplicationId,
-    now,
-  }),
   opportunities: createStandardRelationFieldFlatMetadata({
     objectName,
     workspaceId,

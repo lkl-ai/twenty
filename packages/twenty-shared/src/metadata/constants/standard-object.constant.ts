@@ -1757,14 +1757,8 @@ export const STANDARD_OBJECTS = {
       pipeline: {
         universalIdentifier: '20202020-7895-4380-8a57-b1f3206aae26',
       },
-      pipelineId: {
-        universalIdentifier: '20202020-f71e-47cb-8633-85aaeb479372',
-      },
       pipelineStage: {
         universalIdentifier: '20202020-cdf7-482b-b9f4-f7fe77486a3c',
-      },
-      pipelineStageId: {
-        universalIdentifier: '20202020-5efe-4880-808e-7dc7ed7b54ff',
       },
     },
     indexes: {
@@ -1779,6 +1773,12 @@ export const STANDARD_OBJECTS = {
       },
       searchVectorGinIndex: {
         universalIdentifier: 'f53fdd28-a26b-47ba-81b5-6813ad622720',
+      },
+      pipelineIdIndex: {
+        universalIdentifier: '702459d6-5283-49ed-b755-1661ee9095aa',
+      },
+      pipelineStageIdIndex: {
+        universalIdentifier: '76058d53-c958-4663-925d-54afd335a4af',
       },
     },
     views: {
@@ -3124,9 +3124,6 @@ export const STANDARD_OBJECTS = {
       },
       pipeline: {
         universalIdentifier: '20202020-8002-445b-afd9-775477e806d4',
-      },
-      pipelineId: {
-        universalIdentifier: '20202020-2d93-4998-8361-b61b122f8acb',
       },
       opportunities: {
         universalIdentifier: '20202020-f83b-4def-b54b-9e6097532608',

@@ -66,4 +66,28 @@ export const buildOpportunityStandardFlatIndexMetadatas = ({
     twentyStandardApplicationId,
     now,
   }),
+  pipelineIdIndex: createStandardIndexFlatMetadata({
+    objectName,
+    workspaceId,
+    context: {
+      indexName: 'pipelineIdIndex',
+      relatedFieldNames: ['pipeline'],
+    },
+    standardObjectMetadataRelatedEntityIds,
+    dependencyFlatEntityMaps,
+    twentyStandardApplicationId,
+    now,
+  }),
+  pipelineStageIdIndex: createStandardIndexFlatMetadata({
+    objectName,
+    workspaceId,
+    context: {
+      indexName: 'pipelineStageIdIndex',
+      relatedFieldNames: ['pipelineStage'],
+    },
+    standardObjectMetadataRelatedEntityIds,
+    dependencyFlatEntityMaps,
+    twentyStandardApplicationId,
+    now,
+  }),
 });

@@ -8,6 +8,5 @@ export class PipelineStageWorkspaceEntity extends BaseWorkspaceEntity {
   position: number;
   color: string;
   pipeline: EntityRelation<PipelineWorkspaceEntity>;
-  pipelineId: string | null;
   opportunities: EntityRelation<OpportunityWorkspaceEntity[]>;
 }
