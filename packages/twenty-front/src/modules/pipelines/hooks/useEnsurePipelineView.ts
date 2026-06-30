@@ -10,6 +10,8 @@ import { viewsSelector } from '@/views/states/selectors/viewsSelector';
 import {
   CreateManyViewGroupsDocument,
   CreateViewDocument,
+  CreateViewFilterDocument,
+  ViewFilterOperand,
   ViewOpenRecordIn,
   ViewType,
   ViewVisibility,
@@ -17,8 +19,9 @@ import {
 import { isDefined } from 'twenty-shared/utils';
 
 // Returns a callback that finds the Opportunity Kanban view for the given
-// pipeline (matched by name + mainGroupByFieldMetadataId = pipelineStage field)
-// and creates it — with one ViewGroup per stage — when absent.
+// pipeline (matched by name + mainGroupByFieldMetadataId = pipelineStage field
+// + a pipeline IS-filter on that pipeline's id) and creates it — with one
+// ViewGroup per stage and a pipeline ViewFilter — when absent.
 export const useEnsurePipelineView = () => {
   const { objectMetadataItem: opportunityMetadataItem } = useObjectMetadataItem(
     { objectNameSingular: 'opportunity' },
@@ -29,12 +32,18 @@ export const useEnsurePipelineView = () => {
     (field) => field.name === 'pipelineStage',
   );
 
+  // pipeline relation field on Opportunity (used for scoping the board)
+  const pipelineField = opportunityMetadataItem.fields?.find(
+    (field) => field.name === 'pipeline',
+  );
+
   const allViews = useAtomStateValue(viewsSelector);
 
   const [createViewMutation] = useMutation(CreateViewDocument);
   const [createManyViewGroupsMutation] = useMutation(
     CreateManyViewGroupsDocument,
   );
+  const [createViewFilterMutation] = useMutation(CreateViewFilterDocument);
 
   const ensurePipelineView = useCallback(
     async (
@@ -47,15 +56,53 @@ export const useEnsurePipelineView = () => {
 
       const opportunityObjectMetadataId = opportunityMetadataItem.id;
 
-      // Find an existing Kanban view for Opportunity whose name matches
-      // this pipeline and is grouped by the pipelineStage relation field.
-      const existingView = allViews.find(
-        (view) =>
-          view.objectMetadataId === opportunityObjectMetadataId &&
-          view.type === ViewType.KANBAN &&
-          view.name === pipeline.name &&
-          view.mainGroupByFieldMetadataId === pipelineStageField.id,
-      );
+      // The relation filter value for `pipeline IS <pipelineId>`.
+      // RELATION fields use operand IS with a JSON value containing selectedRecordIds.
+      const pipelineFilterValue = JSON.stringify({
+        isCurrentWorkspaceMemberSelected: false,
+        selectedRecordIds: [pipeline.id],
+      });
+
+      // Find an existing Kanban view for Opportunity whose name matches this
+      // pipeline, is grouped by the pipelineStage relation field, and is
+      // already scoped to this pipeline via a pipeline IS-filter.
+      // Checking the filter prevents two same-named pipelines from colliding.
+      const existingView = allViews.find((view) => {
+        if (
+          view.objectMetadataId !== opportunityObjectMetadataId ||
+          view.type !== ViewType.KANBAN ||
+          view.name !== pipeline.name ||
+          view.mainGroupByFieldMetadataId !== pipelineStageField.id
+        ) {
+          return false;
+        }
+
+        // If no pipeline field metadata is available yet we fall back to
+        // name + groupBy matching (safe because pipeline field lookup is
+        // best-effort — the filter will be added on first creation).
+        if (!isDefined(pipelineField)) {
+          return true;
+        }
+
+        return view.viewFilters.some((filter) => {
+          if (filter.fieldMetadataId !== pipelineField.id) {
+            return false;
+          }
+          // Both enums share the same string value 'IS'; compare as string to
+          // avoid a nominal-type mismatch between twenty-shared and graphql enums.
+          if ((filter.operand as string) !== 'IS') {
+            return false;
+          }
+          try {
+            const parsed = JSON.parse(filter.value) as {
+              selectedRecordIds?: string[];
+            };
+            return parsed.selectedRecordIds?.includes(pipeline.id) === true;
+          } catch {
+            return false;
+          }
+        });
+      });
 
       if (isDefined(existingView)) {
         return existingView.id;
@@ -89,9 +136,7 @@ export const useEnsurePipelineView = () => {
         (stageA, stageB) => stageA.position - stageB.position,
       );
 
-      // Create one ViewGroup per stage — fieldValue = stage UUID (required for
-      // relation-grouped boards; SELECT-option logic in useViewsSideEffectsOnViewGroups
-      // only seeds options, not relation records, so we must do this explicitly).
+      // Create one ViewGroup per stage — fieldValue = stage UUID.
       if (sortedStages.length > 0) {
         await createManyViewGroupsMutation({
           variables: {
@@ -106,14 +151,32 @@ export const useEnsurePipelineView = () => {
         });
       }
 
+      // Create the pipeline IS-filter so this board only shows opportunities
+      // belonging to this pipeline.
+      if (isDefined(pipelineField)) {
+        await createViewFilterMutation({
+          variables: {
+            input: {
+              id: v4(),
+              viewId: newViewId,
+              fieldMetadataId: pipelineField.id,
+              operand: ViewFilterOperand.IS,
+              value: pipelineFilterValue,
+            },
+          },
+        });
+      }
+
       return newViewId;
     },
     [
       allViews,
       opportunityMetadataItem.id,
       pipelineStageField,
+      pipelineField,
       createViewMutation,
       createManyViewGroupsMutation,
+      createViewFilterMutation,
     ],
   );
 
