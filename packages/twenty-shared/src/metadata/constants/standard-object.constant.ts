@@ -3073,6 +3073,15 @@ export const STANDARD_OBJECTS = {
       isDefault: {
         universalIdentifier: '20202020-abe0-431a-a01d-e9ea309ca6d3',
       },
+      createdBy: {
+        universalIdentifier: '20202020-aa11-4bb2-8cc3-dd44ee55ff66',
+      },
+      updatedBy: {
+        universalIdentifier: '20202020-bb22-4cc3-9dd4-ee55ff66aa77',
+      },
+      searchVector: {
+        universalIdentifier: '20202020-cc33-4dd4-aee5-ff66aa77bb88',
+      },
       pipelineStages: {
         universalIdentifier: '20202020-d5b0-440f-9170-6bb0a0c877d4',
       },
@@ -3121,6 +3130,15 @@ export const STANDARD_OBJECTS = {
       },
       color: {
         universalIdentifier: '20202020-5e2c-4d33-a394-5e54667d8efc',
+      },
+      createdBy: {
+        universalIdentifier: '20202020-dd44-4ee5-bff6-aa77bb88cc99',
+      },
+      updatedBy: {
+        universalIdentifier: '20202020-ee55-4ff6-8007-bb88cc99dd00',
+      },
+      searchVector: {
+        universalIdentifier: '20202020-ff66-4007-a118-cc99dd00ee11',
       },
       pipeline: {
         universalIdentifier: '20202020-8002-445b-afd9-775477e806d4',

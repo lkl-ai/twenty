@@ -13,6 +13,8 @@ import {
   createStandardFieldFlatMetadata,
 } from 'src/engine/workspace-manager/twenty-standard-application/utils/field-metadata/create-standard-field-flat-metadata.util';
 import { createStandardRelationFieldFlatMetadata } from 'src/engine/workspace-manager/twenty-standard-application/utils/field-metadata/create-standard-relation-field-flat-metadata.util';
+import { SEARCH_FIELDS_BY_STANDARD_OBJECT_NAME } from 'src/engine/workspace-manager/twenty-standard-application/constants/search-fields-by-standard-object-name.constant';
+import { getTsVectorColumnExpressionFromFields } from 'src/engine/workspace-manager/utils/get-ts-vector-column-expression.util';
 
 export const buildPipelineStandardFlatFieldMetadatas = ({
   now,
@@ -133,10 +135,11 @@ export const buildPipelineStandardFlatFieldMetadatas = ({
     workspaceId,
     context: {
       fieldName: 'position',
-      type: FieldMetadataType.NUMBER,
+      type: FieldMetadataType.POSITION,
       label: i18nLabel(msg`Position`),
-      description: i18nLabel(msg`The pipeline display order`),
+      description: i18nLabel(msg`Pipeline record position`),
       icon: 'IconHierarchy2',
+      isSystem: true,
       isNullable: false,
       defaultValue: 0,
     },
@@ -156,6 +159,78 @@ export const buildPipelineStandardFlatFieldMetadatas = ({
       icon: 'IconCheck',
       isNullable: false,
       defaultValue: false,
+    },
+    standardObjectMetadataRelatedEntityIds,
+    dependencyFlatEntityMaps,
+    twentyStandardApplicationId,
+    now,
+  }),
+
+  createdBy: createStandardFieldFlatMetadata({
+    objectName,
+    workspaceId,
+    context: {
+      fieldName: 'createdBy',
+      type: FieldMetadataType.ACTOR,
+      label: i18nLabel(msg`Created by`),
+      description: i18nLabel(msg`The creator of the record`),
+      icon: 'IconCreativeCommonsSa',
+      isSystem: true,
+      isUIEditable: false,
+      isNullable: false,
+      defaultValue: {
+        source: "'MANUAL'",
+        name: "'System'",
+        workspaceMemberId: null,
+      },
+    },
+    standardObjectMetadataRelatedEntityIds,
+    dependencyFlatEntityMaps,
+    twentyStandardApplicationId,
+    now,
+  }),
+  updatedBy: createStandardFieldFlatMetadata({
+    objectName,
+    workspaceId,
+    context: {
+      fieldName: 'updatedBy',
+      type: FieldMetadataType.ACTOR,
+      label: i18nLabel(msg`Updated by`),
+      description: i18nLabel(
+        msg`The workspace member who last updated the record`,
+      ),
+      icon: 'IconUserCircle',
+      isSystem: true,
+      isUIEditable: false,
+      isNullable: false,
+      defaultValue: {
+        source: "'MANUAL'",
+        name: "'System'",
+        workspaceMemberId: null,
+      },
+    },
+    standardObjectMetadataRelatedEntityIds,
+    dependencyFlatEntityMaps,
+    twentyStandardApplicationId,
+    now,
+  }),
+  searchVector: createStandardFieldFlatMetadata({
+    objectName,
+    workspaceId,
+    context: {
+      fieldName: 'searchVector',
+      type: FieldMetadataType.TS_VECTOR,
+      label: i18nLabel(msg`Search vector`),
+      description: i18nLabel(msg`Field used for full-text search`),
+      icon: 'IconUser',
+      isSystem: true,
+      isNullable: true,
+      settings: {
+        generatedType: 'STORED',
+        asExpression: getTsVectorColumnExpressionFromFields(
+          SEARCH_FIELDS_BY_STANDARD_OBJECT_NAME[objectName],
+        ),
+      },
     },
     standardObjectMetadataRelatedEntityIds,
     dependencyFlatEntityMaps,
