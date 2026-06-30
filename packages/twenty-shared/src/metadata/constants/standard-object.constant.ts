@@ -1754,6 +1754,18 @@ export const STANDARD_OBJECTS = {
       searchVector: {
         universalIdentifier: '428a0da5-4b2e-4ce3-b695-89a8b384e6e3',
       },
+      pipeline: {
+        universalIdentifier: '20202020-7895-4380-8a57-b1f3206aae26',
+      },
+      pipelineId: {
+        universalIdentifier: '20202020-f71e-47cb-8633-85aaeb479372',
+      },
+      pipelineStage: {
+        universalIdentifier: '20202020-cdf7-482b-b9f4-f7fe77486a3c',
+      },
+      pipelineStageId: {
+        universalIdentifier: '20202020-5efe-4880-808e-7dc7ed7b54ff',
+      },
     },
     indexes: {
       pointOfContactIdIndex: {
@@ -3036,6 +3048,107 @@ export const STANDARD_OBJECTS = {
           },
           assignedTasks: {
             universalIdentifier: 'af16226e-6375-4676-8bd9-9d1a57076fc4',
+          },
+        },
+      },
+    },
+  },
+  pipeline: {
+    universalIdentifier: '20202020-eeb6-4f4f-9296-99c2a808b9c7',
+    fields: {
+      id: { universalIdentifier: '20202020-c8cd-4e05-96a2-3677a2f8bbba' },
+      createdAt: {
+        universalIdentifier: '20202020-b94e-4ce8-83cf-5f30a88a0f52',
+      },
+      updatedAt: {
+        universalIdentifier: '20202020-175b-472d-8146-e8d484f28031',
+      },
+      deletedAt: {
+        universalIdentifier: '20202020-220c-4507-b688-5d9f33da16cd',
+      },
+      name: { universalIdentifier: '20202020-f95f-42e7-8946-9aa899293611' },
+      position: {
+        universalIdentifier: '20202020-c63b-45cc-b289-5cde8a6ba0df',
+      },
+      isDefault: {
+        universalIdentifier: '20202020-abe0-431a-a01d-e9ea309ca6d3',
+      },
+      pipelineStages: {
+        universalIdentifier: '20202020-d5b0-440f-9170-6bb0a0c877d4',
+      },
+      opportunities: {
+        universalIdentifier: '20202020-246c-429d-9509-62246b938791',
+      },
+    },
+    indexes: {
+      nameIndex: {
+        universalIdentifier: '20202020-e65b-4c97-82fa-6b7a3c2a7b78',
+      },
+    },
+    views: {
+      allPipelines: {
+        universalIdentifier: '20202020-3402-4bdf-a228-df1a8516cbac',
+        viewFields: {
+          name: {
+            universalIdentifier: '20202020-fefd-4279-8e92-69b5c00143a6',
+          },
+          position: {
+            universalIdentifier: '20202020-1d24-4e85-a969-fd1f042f7196',
+          },
+          isDefault: {
+            universalIdentifier: '20202020-0b80-40fe-9d6b-8f902273d1ec',
+          },
+        },
+      },
+    },
+  },
+  pipelineStage: {
+    universalIdentifier: '20202020-06d7-4648-9b19-3bc2ac24c4ad',
+    fields: {
+      id: { universalIdentifier: '20202020-6b70-4ff2-a9cf-2b8f732e976c' },
+      createdAt: {
+        universalIdentifier: '20202020-d777-4e8b-bd69-dca51ec43f59',
+      },
+      updatedAt: {
+        universalIdentifier: '20202020-0686-42a2-a156-a54c5f0fde30',
+      },
+      deletedAt: {
+        universalIdentifier: '20202020-c9e0-4aa4-bf58-d6630b8da4b0',
+      },
+      name: { universalIdentifier: '20202020-b00a-4e27-a96d-51c939e309f0' },
+      position: {
+        universalIdentifier: '20202020-236a-476e-94d5-8f354346e1bf',
+      },
+      color: {
+        universalIdentifier: '20202020-5e2c-4d33-a394-5e54667d8efc',
+      },
+      pipeline: {
+        universalIdentifier: '20202020-8002-445b-afd9-775477e806d4',
+      },
+      pipelineId: {
+        universalIdentifier: '20202020-2d93-4998-8361-b61b122f8acb',
+      },
+      opportunities: {
+        universalIdentifier: '20202020-f83b-4def-b54b-9e6097532608',
+      },
+    },
+    indexes: {
+      pipelineIdIndex: {
+        universalIdentifier: '20202020-ca98-400f-a5e7-f80ac20b0b47',
+      },
+    },
+    views: {
+      allPipelineStages: {
+        universalIdentifier: '20202020-ddca-4278-b624-9a3c4b4fa806',
+        viewFields: {
+          name: {
+            universalIdentifier: '20202020-d664-40bb-a618-7c8eb2230f02',
+          },
+          color: {
+            universalIdentifier: '20202020-9fbe-4c0c-98a6-d597868515a5',
+          },
+          position: {
+            universalIdentifier: '20202020-ae09-4c07-bc03-20eac301974a',
           },
         },
       },
