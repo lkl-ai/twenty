@@ -5,12 +5,15 @@ import { contextStoreNumberOfSelectedRecordsComponentState } from '@/context-sto
 import { isLayoutCustomizationModeEnabledState } from '@/layout-customization/states/isLayoutCustomizationModeEnabledState';
 import { useNumberFormat } from '@/localization/hooks/useNumberFormat';
 import { useFilteredObjectMetadataItems } from '@/object-metadata/hooks/useFilteredObjectMetadataItems';
+import { recordIndexViewTypeState } from '@/object-record/record-index/states/recordIndexViewTypeState';
 import { RecordIndexPageHeaderIcon } from '@/object-record/record-index/components/RecordIndexPageHeaderIcon';
 import { useRecordIndexContextOrThrow } from '@/object-record/record-index/contexts/RecordIndexContext';
+import { PipelineSwitcher } from '@/pipelines/components/PipelineSwitcher';
 import { SidePanelToggleButton } from '@/side-panel/components/SidePanelToggleButton';
 import { PageCardHeader } from '@/ui/layout/page/components/PageCardHeader';
 import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { ViewType } from '@/views/types/ViewType';
 import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { isDefined } from 'twenty-shared/utils';
@@ -42,7 +45,10 @@ export const RecordIndexPageHeader = () => {
 
   const { formatNumber } = useNumberFormat();
 
-  const { objectNamePlural } = useRecordIndexContextOrThrow();
+  const { objectNamePlural, objectNameSingular } =
+    useRecordIndexContextOrThrow();
+
+  const recordIndexViewType = useAtomStateValue(recordIndexViewTypeState);
 
   const objectMetadataItem =
     findObjectMetadataItemByNamePlural(objectNamePlural);
@@ -70,20 +76,27 @@ export const RecordIndexPageHeader = () => {
     isLayoutCustomizationModeEnabledState,
   );
 
+  const showPipelineSwitcher =
+    objectNameSingular === 'opportunity' &&
+    recordIndexViewType === ViewType.KANBAN;
+
   return (
-    <PageCardHeader
-      icon={
-        <RecordIndexPageHeaderIcon objectMetadataItem={objectMetadataItem} />
-      }
-      title={pageHeaderTitle}
-      actionButton={
-        isDefined(contextStoreCurrentViewId) ? (
-          <>
-            <RecordIndexCommandMenu />
-            {!isLayoutCustomizationModeEnabled && <SidePanelToggleButton />}
-          </>
-        ) : undefined
-      }
-    />
+    <>
+      <PageCardHeader
+        icon={
+          <RecordIndexPageHeaderIcon objectMetadataItem={objectMetadataItem} />
+        }
+        title={pageHeaderTitle}
+        actionButton={
+          isDefined(contextStoreCurrentViewId) ? (
+            <>
+              <RecordIndexCommandMenu />
+              {!isLayoutCustomizationModeEnabled && <SidePanelToggleButton />}
+            </>
+          ) : undefined
+        }
+      />
+      {showPipelineSwitcher && <PipelineSwitcher />}
+    </>
   );
 };
