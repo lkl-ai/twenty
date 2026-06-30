@@ -11,6 +11,7 @@ import {
 } from '@/pipelines/types/PipelineRecord';
 import { SettingsPageContainer } from '@/settings/components/SettingsPageContainer';
 import { SettingsPageLayout } from '@/settings/components/layout/SettingsPageLayout';
+import { SettingsPipelineStagesEditor } from '@/settings/pipelines/components/SettingsPipelineStagesEditor';
 import { TextInput } from '@/ui/input/components/TextInput';
 import { useLingui } from '@lingui/react/macro';
 import { styled } from '@linaria/react';
@@ -20,6 +21,7 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconCheck,
+  IconLayoutList,
   IconPencil,
   IconPlus,
   IconStar,
@@ -33,14 +35,9 @@ import { H2Title } from 'twenty-ui/typography';
 
 const StyledPipelineRow = styled.div`
   align-items: center;
-  border-bottom: 1px solid ${themeCssVariables.border.color.light};
   display: flex;
   gap: ${themeCssVariables.spacing['2']};
   padding: ${themeCssVariables.spacing['2']} 0;
-
-  &:last-child {
-    border-bottom: none;
-  }
 `;
 
 const StyledPipelineName = styled.span`
@@ -74,6 +71,28 @@ const StyledEmptyState = styled.p`
   font-size: ${themeCssVariables.font.size.md};
 `;
 
+const StyledPipelineBlock = styled.div`
+  border-bottom: 1px solid ${themeCssVariables.border.color.light};
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const StyledStagesPanel = styled.div`
+  background: ${themeCssVariables.background.secondary};
+  border-radius: ${themeCssVariables.border.radius.sm};
+  margin-bottom: ${themeCssVariables.spacing['3']};
+  padding: ${themeCssVariables.spacing['3']};
+`;
+
+const StyledStagesPanelTitle = styled.div`
+  color: ${themeCssVariables.font.color.light};
+  font-size: ${themeCssVariables.font.size.xs};
+  font-weight: ${themeCssVariables.font.weight.semiBold};
+  margin-bottom: ${themeCssVariables.spacing['2']};
+`;
+
 const StyledRenameInput = styled.div`
   align-items: center;
   display: flex;
@@ -88,6 +107,9 @@ export const SettingsPipelines = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [expandedStagesPipelineId, setExpandedStagesPipelineId] = useState<
+    string | null
+  >(null);
 
   const { pipelines, loading } = usePipelines();
   const { ensurePipelineView } = useEnsurePipelineView();
@@ -260,88 +282,113 @@ export const SettingsPipelines = () => {
             </StyledEmptyState>
           ) : (
             pipelines.map((pipeline, index) => (
-              <StyledPipelineRow key={pipeline.id}>
-                {renamingId === pipeline.id ? (
-                  <StyledRenameInput>
-                    <TextInput
-                      value={renameValue}
-                      onChange={setRenameValue}
-                      autoFocus
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          handleConfirmRename(pipeline);
-                        } else if (event.key === 'Escape') {
-                          handleCancelRename();
-                        }
-                      }}
-                    />
-                    <Button
-                      Icon={IconCheck}
-                      size="small"
-                      variant="tertiary"
-                      disabled={!renameValue.trim()}
-                      onClick={() => handleConfirmRename(pipeline)}
-                      ariaLabel={t`Confirm rename`}
-                    />
-                    <Button
-                      Icon={IconX}
-                      size="small"
-                      variant="tertiary"
-                      onClick={handleCancelRename}
-                      ariaLabel={t`Cancel rename`}
-                    />
-                  </StyledRenameInput>
-                ) : (
-                  <>
-                    <StyledPipelineName>{pipeline.name}</StyledPipelineName>
-                    {pipeline.isDefault === true && (
-                      <StyledDefaultBadge>{t`Default`}</StyledDefaultBadge>
-                    )}
-                    <StyledRowActions>
+              <StyledPipelineBlock key={pipeline.id}>
+                <StyledPipelineRow>
+                  {renamingId === pipeline.id ? (
+                    <StyledRenameInput>
+                      <TextInput
+                        value={renameValue}
+                        onChange={setRenameValue}
+                        autoFocus
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            handleConfirmRename(pipeline);
+                          } else if (event.key === 'Escape') {
+                            handleCancelRename();
+                          }
+                        }}
+                      />
                       <Button
-                        Icon={IconPencil}
+                        Icon={IconCheck}
                         size="small"
                         variant="tertiary"
-                        onClick={() => handleStartRename(pipeline)}
-                        ariaLabel={t`Rename pipeline`}
+                        disabled={!renameValue.trim()}
+                        onClick={() => handleConfirmRename(pipeline)}
+                        ariaLabel={t`Confirm rename`}
                       />
-                      {pipeline.isDefault !== true && (
+                      <Button
+                        Icon={IconX}
+                        size="small"
+                        variant="tertiary"
+                        onClick={handleCancelRename}
+                        ariaLabel={t`Cancel rename`}
+                      />
+                    </StyledRenameInput>
+                  ) : (
+                    <>
+                      <StyledPipelineName>{pipeline.name}</StyledPipelineName>
+                      {pipeline.isDefault === true && (
+                        <StyledDefaultBadge>{t`Default`}</StyledDefaultBadge>
+                      )}
+                      <StyledRowActions>
                         <Button
-                          Icon={IconStar}
+                          Icon={IconLayoutList}
+                          size="small"
+                          variant={
+                            expandedStagesPipelineId === pipeline.id
+                              ? 'primary'
+                              : 'tertiary'
+                          }
+                          onClick={() =>
+                            setExpandedStagesPipelineId(
+                              expandedStagesPipelineId === pipeline.id
+                                ? null
+                                : pipeline.id,
+                            )
+                          }
+                          ariaLabel={t`Edit stages`}
+                        />
+                        <Button
+                          Icon={IconPencil}
                           size="small"
                           variant="tertiary"
-                          onClick={() => handleSetDefault(pipeline)}
-                          ariaLabel={t`Set as default pipeline`}
+                          onClick={() => handleStartRename(pipeline)}
+                          ariaLabel={t`Rename pipeline`}
                         />
-                      )}
-                      <Button
-                        Icon={IconChevronUp}
-                        size="small"
-                        variant="tertiary"
-                        disabled={index === 0}
-                        onClick={() => handleMoveUp(pipeline)}
-                        ariaLabel={t`Move pipeline up`}
-                      />
-                      <Button
-                        Icon={IconChevronDown}
-                        size="small"
-                        variant="tertiary"
-                        disabled={index === pipelines.length - 1}
-                        onClick={() => handleMoveDown(pipeline)}
-                        ariaLabel={t`Move pipeline down`}
-                      />
-                      <Button
-                        Icon={IconTrash}
-                        size="small"
-                        variant="tertiary"
-                        accent="danger"
-                        onClick={() => handleDelete(pipeline.id)}
-                        ariaLabel={t`Delete pipeline`}
-                      />
-                    </StyledRowActions>
-                  </>
+                        {pipeline.isDefault !== true && (
+                          <Button
+                            Icon={IconStar}
+                            size="small"
+                            variant="tertiary"
+                            onClick={() => handleSetDefault(pipeline)}
+                            ariaLabel={t`Set as default pipeline`}
+                          />
+                        )}
+                        <Button
+                          Icon={IconChevronUp}
+                          size="small"
+                          variant="tertiary"
+                          disabled={index === 0}
+                          onClick={() => handleMoveUp(pipeline)}
+                          ariaLabel={t`Move pipeline up`}
+                        />
+                        <Button
+                          Icon={IconChevronDown}
+                          size="small"
+                          variant="tertiary"
+                          disabled={index === pipelines.length - 1}
+                          onClick={() => handleMoveDown(pipeline)}
+                          ariaLabel={t`Move pipeline down`}
+                        />
+                        <Button
+                          Icon={IconTrash}
+                          size="small"
+                          variant="tertiary"
+                          accent="danger"
+                          onClick={() => handleDelete(pipeline.id)}
+                          ariaLabel={t`Delete pipeline`}
+                        />
+                      </StyledRowActions>
+                    </>
+                  )}
+                </StyledPipelineRow>
+                {expandedStagesPipelineId === pipeline.id && (
+                  <StyledStagesPanel>
+                    <StyledStagesPanelTitle>{t`Stages`}</StyledStagesPanelTitle>
+                    <SettingsPipelineStagesEditor pipeline={pipeline} />
+                  </StyledStagesPanel>
                 )}
-              </StyledPipelineRow>
+              </StyledPipelineBlock>
             ))
           )}
 

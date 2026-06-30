@@ -23,6 +23,7 @@ export const usePipelines = (): UsePipelinesResult => {
             id: true,
             name: true,
             position: true,
+            color: true,
             pipelineId: true,
           },
         },

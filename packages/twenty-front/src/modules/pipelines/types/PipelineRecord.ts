@@ -4,6 +4,7 @@ export type PipelineStageRecord = ObjectRecord & {
   id: string;
   name: string;
   position: number;
+  color: string;
   pipelineId: string;
 };
 
