@@ -1,4 +1,5 @@
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
+
 import { useOpportunityPipelineStageReset } from '@/pipelines/hooks/useOpportunityPipelineStageReset';
 import { type PipelineRecord } from '@/pipelines/types/PipelineRecord';
 
@@ -6,7 +7,64 @@ jest.mock('@/object-record/hooks/useUpdateOneRecord', () => ({
   useUpdateOneRecord: jest.fn(),
 }));
 
+jest.mock('@/pipelines/hooks/usePipelines', () => ({
+  usePipelines: jest.fn(),
+}));
+
 const mockUpdateOneRecord = jest.fn();
+
+// Pipelines returned by the mocked usePipelines — mirrors what the real hook
+// returns from Apollo cache. Each pipeline carries its stages nested inline,
+// exactly as usePipelines fetches them via recordGqlFields.
+const mockPipelines: PipelineRecord[] = [
+  {
+    __typename: 'Pipeline',
+    id: 'pipeline-new',
+    name: 'Sales',
+    position: 0,
+    pipelineStages: {
+      edges: [
+        {
+          node: {
+            __typename: 'PipelineStage',
+            id: 'stage-b',
+            name: 'Proposal',
+            position: 2,
+            color: 'blue',
+            pipelineId: 'pipeline-new',
+          },
+        },
+        {
+          node: {
+            __typename: 'PipelineStage',
+            id: 'stage-a',
+            name: 'Qualification',
+            position: 0,
+            color: 'green',
+            pipelineId: 'pipeline-new',
+          },
+        },
+        {
+          node: {
+            __typename: 'PipelineStage',
+            id: 'stage-c',
+            name: 'Negotiation',
+            position: 5,
+            color: 'red',
+            pipelineId: 'pipeline-new',
+          },
+        },
+      ],
+    },
+  },
+  {
+    __typename: 'Pipeline',
+    id: 'pipeline-empty',
+    name: 'Empty Pipeline',
+    position: 1,
+    pipelineStages: { edges: [] },
+  },
+];
 
 describe('useOpportunityPipelineStageReset', () => {
   beforeEach(() => {
@@ -19,61 +77,30 @@ describe('useOpportunityPipelineStageReset', () => {
       updateOneRecord: mockUpdateOneRecord,
     });
 
+    const usePipelinesMock = jest.requireMock('@/pipelines/hooks/usePipelines');
+    usePipelinesMock.usePipelines.mockReturnValue({
+      pipelines: mockPipelines,
+      loading: false,
+    });
+
     mockUpdateOneRecord.mockResolvedValue({});
   });
 
-  it('should reset pipelineStageId to the first stage (by position) of the new pipeline', async () => {
-    const newPipeline: PipelineRecord = {
-      __typename: 'Pipeline',
-      id: 'pipeline-new',
-      name: 'Sales',
-      position: 0,
-      pipelineStages: {
-        edges: [
-          {
-            node: {
-              __typename: 'PipelineStage',
-              id: 'stage-b',
-              name: 'Proposal',
-              position: 2,
-              color: 'blue',
-              pipelineId: 'pipeline-new',
-            },
-          },
-          {
-            node: {
-              __typename: 'PipelineStage',
-              id: 'stage-a',
-              name: 'Qualification',
-              position: 0,
-              color: 'green',
-              pipelineId: 'pipeline-new',
-            },
-          },
-          {
-            node: {
-              __typename: 'PipelineStage',
-              id: 'stage-c',
-              name: 'Negotiation',
-              position: 5,
-              color: 'red',
-              pipelineId: 'pipeline-new',
-            },
-          },
-        ],
-      },
-    };
-
+  // Real runtime path: the relation picker submits only { id }, so at runtime
+  // resetPipelineStage receives a pipelineId string — NOT a full PipelineRecord.
+  // The hook must resolve the pipeline's stages from usePipelines (Apollo cache).
+  it('should set pipelineStageId to first stage (by position) when given a pipeline id', async () => {
     const { result } = renderHook(() => useOpportunityPipelineStageReset());
 
     await act(async () => {
       await result.current.resetPipelineStage({
         opportunityId: 'opp-1',
-        newPipeline,
+        pipelineId: 'pipeline-new',
       });
     });
 
     expect(mockUpdateOneRecord).toHaveBeenCalledTimes(1);
+    // stage-a has position 0 — the lowest — so it should be selected
     expect(mockUpdateOneRecord).toHaveBeenCalledWith({
       objectNameSingular: 'opportunity',
       idToUpdate: 'opp-1',
@@ -81,21 +108,13 @@ describe('useOpportunityPipelineStageReset', () => {
     });
   });
 
-  it('should clear pipelineStageId when the new pipeline has no stages', async () => {
-    const emptyPipeline: PipelineRecord = {
-      __typename: 'Pipeline',
-      id: 'pipeline-empty',
-      name: 'Empty Pipeline',
-      position: 1,
-      pipelineStages: { edges: [] },
-    };
-
+  it('should set pipelineStageId to null when the pipeline has no stages', async () => {
     const { result } = renderHook(() => useOpportunityPipelineStageReset());
 
     await act(async () => {
       await result.current.resetPipelineStage({
         opportunityId: 'opp-2',
-        newPipeline: emptyPipeline,
+        pipelineId: 'pipeline-empty',
       });
     });
 
@@ -107,13 +126,31 @@ describe('useOpportunityPipelineStageReset', () => {
     });
   });
 
-  it('should clear pipelineStageId when newPipeline is null', async () => {
+  it('should set pipelineStageId to null when the pipeline id is not found in usePipelines', async () => {
+    const { result } = renderHook(() => useOpportunityPipelineStageReset());
+
+    await act(async () => {
+      await result.current.resetPipelineStage({
+        opportunityId: 'opp-5',
+        pipelineId: 'pipeline-unknown',
+      });
+    });
+
+    expect(mockUpdateOneRecord).toHaveBeenCalledTimes(1);
+    expect(mockUpdateOneRecord).toHaveBeenCalledWith({
+      objectNameSingular: 'opportunity',
+      idToUpdate: 'opp-5',
+      updateOneRecordInput: { pipelineStageId: null },
+    });
+  });
+
+  it('should set pipelineStageId to null when pipelineId is null', async () => {
     const { result } = renderHook(() => useOpportunityPipelineStageReset());
 
     await act(async () => {
       await result.current.resetPipelineStage({
         opportunityId: 'opp-3',
-        newPipeline: null,
+        pipelineId: null,
       });
     });
 
@@ -125,13 +162,13 @@ describe('useOpportunityPipelineStageReset', () => {
     });
   });
 
-  it('should clear pipelineStageId when newPipeline is undefined', async () => {
+  it('should set pipelineStageId to null when pipelineId is undefined', async () => {
     const { result } = renderHook(() => useOpportunityPipelineStageReset());
 
     await act(async () => {
       await result.current.resetPipelineStage({
         opportunityId: 'opp-4',
-        newPipeline: undefined,
+        pipelineId: undefined,
       });
     });
 

@@ -33,7 +33,6 @@ import { getRecordFromRecordNode } from '@/object-record/cache/utils/getRecordFr
 import { useUpdateOneRecord } from '@/object-record/hooks/useUpdateOneRecord';
 import { buildMorphRelationUpdateInput } from '@/object-record/record-field/ui/meta-types/input/utils/buildMorphRelationUpdateInput';
 import { useOpportunityPipelineStageReset } from '@/pipelines/hooks/useOpportunityPipelineStageReset';
-import { type PipelineRecord } from '@/pipelines/types/PipelineRecord';
 import { isFieldArray } from '@/object-record/record-field/ui/types/guards/isFieldArray';
 import { isFieldArrayValue } from '@/object-record/record-field/ui/types/guards/isFieldArrayValue';
 import { isFieldBoolean } from '@/object-record/record-field/ui/types/guards/isFieldBoolean';
@@ -228,7 +227,8 @@ export const usePersistField = ({
           ) {
             await resetPipelineStage({
               opportunityId: recordId,
-              newPipeline: valueToPersist as PipelineRecord | null | undefined,
+              pipelineId: (valueToPersist as { id?: string } | null | undefined)
+                ?.id,
             });
           }
 
