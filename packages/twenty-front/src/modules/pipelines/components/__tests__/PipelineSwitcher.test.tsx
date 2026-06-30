@@ -18,9 +18,12 @@ jest.mock('@/object-metadata/hooks/useObjectMetadataItem', () => ({
   useObjectMetadataItem: jest.fn(),
 }));
 
-jest.mock('@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue', () => ({
-  useAtomComponentStateValue: jest.fn(),
-}));
+jest.mock(
+  '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue',
+  () => ({
+    useAtomComponentStateValue: jest.fn(),
+  }),
+);
 
 jest.mock('@/ui/utilities/state/jotai/hooks/useAtomStateValue', () => ({
   useAtomStateValue: jest.fn(),
@@ -73,9 +76,7 @@ describe('PipelineSwitcher', () => {
       ensurePipelineView: mockEnsurePipelineView,
     });
 
-    const useChangeViewMock = jest.requireMock(
-      '@/views/hooks/useChangeView',
-    );
+    const useChangeViewMock = jest.requireMock('@/views/hooks/useChangeView');
     useChangeViewMock.useChangeView.mockReturnValue({
       changeView: mockChangeView,
     });

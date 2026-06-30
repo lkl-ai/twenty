@@ -9,7 +9,7 @@ import { useDeleteOneRecord } from '@/object-record/hooks/useDeleteOneRecord';
 import { useUpdateOneRecord } from '@/object-record/hooks/useUpdateOneRecord';
 import { useEnsurePipelineView } from '@/pipelines/hooks/useEnsurePipelineView';
 import { usePipelines } from '@/pipelines/hooks/usePipelines';
-import { SettingsPipelines } from '../SettingsPipelines';
+import { SettingsPipelines } from '@/settings/pipelines/components/SettingsPipelines';
 
 jest.mock('@/pipelines/hooks/usePipelines', () => ({
   usePipelines: jest.fn(),
@@ -86,13 +86,14 @@ describe('SettingsPipelines', () => {
     });
     mockedUseCreateOneRecord.mockReturnValue({
       createOneRecord: jest.fn().mockResolvedValue(undefined),
-    } as never);
+      loading: false,
+    });
     mockedUseUpdateOneRecord.mockReturnValue({
       updateOneRecord: jest.fn().mockResolvedValue(undefined),
-    } as never);
+    });
     mockedUseDeleteOneRecord.mockReturnValue({
       deleteOneRecord: jest.fn().mockResolvedValue(undefined),
-    } as never);
+    });
   });
 
   it('renders pipelines from usePipelines', () => {
@@ -125,7 +126,8 @@ describe('SettingsPipelines', () => {
 
     mockedUseCreateOneRecord.mockReturnValue({
       createOneRecord: mockCreateOneRecord,
-    } as never);
+      loading: false,
+    });
     mockedUseEnsurePipelineView.mockReturnValue({
       ensurePipelineView: mockEnsurePipelineView,
     });
@@ -167,16 +169,143 @@ describe('SettingsPipelines', () => {
     });
     mockedUseDeleteOneRecord.mockReturnValue({
       deleteOneRecord: mockDeleteOneRecord,
-    } as never);
+    });
 
     renderComponent();
 
     await act(async () => {
-      fireEvent.click(
-        screen.getByRole('button', { name: /Delete pipeline/i }),
-      );
+      fireEvent.click(screen.getByRole('button', { name: /Delete pipeline/i }));
     });
 
     expect(mockDeleteOneRecord).toHaveBeenCalledWith('1');
+  });
+
+  it('rename confirms and calls updateOneRecord with new name', async () => {
+    const mockUpdateOneRecord = jest.fn().mockResolvedValue(undefined);
+
+    mockedUsePipelines.mockReturnValue({
+      pipelines: [
+        {
+          __typename: 'Pipeline',
+          id: '1',
+          name: 'Sales Pipeline',
+          position: 0,
+          pipelineStages: { edges: [] },
+        },
+      ],
+      loading: false,
+    });
+    mockedUseUpdateOneRecord.mockReturnValue({
+      updateOneRecord: mockUpdateOneRecord,
+    });
+
+    renderComponent();
+
+    // Click rename (pencil) button
+    fireEvent.click(screen.getByRole('button', { name: /Rename pipeline/i }));
+
+    // Find the rename input and type a new name
+    const input = screen.getByDisplayValue('Sales Pipeline');
+    fireEvent.change(input, { target: { value: 'Renamed Pipeline' } });
+
+    // Click confirm (check) button
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Confirm rename/i }));
+    });
+
+    expect(mockUpdateOneRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        objectNameSingular: 'pipeline',
+        idToUpdate: '1',
+        updateOneRecordInput: { name: 'Renamed Pipeline' },
+      }),
+    );
+  });
+
+  it('set-default calls updateOneRecord with isDefault true and clears old default', async () => {
+    const mockUpdateOneRecord = jest.fn().mockResolvedValue(undefined);
+
+    mockedUsePipelines.mockReturnValue({
+      pipelines: [
+        {
+          __typename: 'Pipeline',
+          id: '1',
+          name: 'Sales Pipeline',
+          position: 0,
+          isDefault: true,
+          pipelineStages: { edges: [] },
+        },
+        {
+          __typename: 'Pipeline',
+          id: '2',
+          name: 'Support Pipeline',
+          position: 1,
+          isDefault: false,
+          pipelineStages: { edges: [] },
+        },
+      ],
+      loading: false,
+    });
+    mockedUseUpdateOneRecord.mockReturnValue({
+      updateOneRecord: mockUpdateOneRecord,
+    });
+
+    renderComponent();
+
+    // "Set as default" only appears on non-default pipelines
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: /Set as default pipeline/i }),
+      );
+    });
+
+    // Sets the new default
+    expect(mockUpdateOneRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        objectNameSingular: 'pipeline',
+        idToUpdate: '2',
+        updateOneRecordInput: { isDefault: true },
+      }),
+    );
+    // Clears the old default
+    expect(mockUpdateOneRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        objectNameSingular: 'pipeline',
+        idToUpdate: '1',
+        updateOneRecordInput: { isDefault: false },
+      }),
+    );
+  });
+
+  it('Default badge renders from isDefault field, not array index', () => {
+    mockedUsePipelines.mockReturnValue({
+      pipelines: [
+        {
+          __typename: 'Pipeline',
+          id: '1',
+          name: 'Sales Pipeline',
+          position: 0,
+          isDefault: false,
+          pipelineStages: { edges: [] },
+        },
+        {
+          __typename: 'Pipeline',
+          id: '2',
+          name: 'Support Pipeline',
+          position: 1,
+          isDefault: true,
+          pipelineStages: { edges: [] },
+        },
+      ],
+      loading: false,
+    });
+
+    renderComponent();
+
+    // Badge should be next to 'Support Pipeline', not 'Sales Pipeline'
+    expect(screen.getByText('Default')).toBeInTheDocument();
+    const defaultBadge = screen.getByText('Default');
+    const supportRow = screen.getByText('Support Pipeline').closest('div');
+    expect(supportRow).toContainElement(defaultBadge);
   });
 });

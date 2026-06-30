@@ -690,10 +690,7 @@ export const SettingsRoutes = ({ isAdminPageEnabled }: SettingsRoutesProps) => (
           path={SettingsPath.PublicDomain}
           element={<SettingPublicDomain />}
         />
-        <Route
-          path={SettingsPath.Pipelines}
-          element={<SettingsPipelines />}
-        />
+        <Route path={SettingsPath.Pipelines} element={<SettingsPipelines />} />
       </Route>
       <Route
         element={

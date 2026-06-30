@@ -19,8 +19,12 @@ import { getSettingsPath, isDefined } from 'twenty-shared/utils';
 import {
   IconChevronDown,
   IconChevronUp,
+  IconCheck,
+  IconPencil,
   IconPlus,
+  IconStar,
   IconTrash,
+  IconX,
 } from 'twenty-ui/icon';
 import { Button } from 'twenty-ui/input';
 import { Section } from 'twenty-ui/layout';
@@ -70,11 +74,20 @@ const StyledEmptyState = styled.p`
   font-size: ${themeCssVariables.font.size.md};
 `;
 
+const StyledRenameInput = styled.div`
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: ${themeCssVariables.spacing['1']};
+`;
+
 export const SettingsPipelines = () => {
   const { t } = useLingui();
 
   const [newPipelineName, setNewPipelineName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const { pipelines, loading } = usePipelines();
   const { ensurePipelineView } = useEnsurePipelineView();
@@ -166,6 +179,55 @@ export const SettingsPipelines = () => {
     ]);
   };
 
+  const handleSetDefault = async (pipeline: PipelineRecord) => {
+    const currentDefault = pipelines.find(
+      (existingPipeline) => existingPipeline.isDefault === true,
+    );
+
+    const updates: Promise<unknown>[] = [
+      updateOneRecord({
+        objectNameSingular: 'pipeline',
+        idToUpdate: pipeline.id,
+        updateOneRecordInput: { isDefault: true },
+      }),
+    ];
+
+    if (isDefined(currentDefault) && currentDefault.id !== pipeline.id) {
+      updates.push(
+        updateOneRecord({
+          objectNameSingular: 'pipeline',
+          idToUpdate: currentDefault.id,
+          updateOneRecordInput: { isDefault: false },
+        }),
+      );
+    }
+
+    await Promise.all(updates);
+  };
+
+  const handleStartRename = (pipeline: PipelineRecord) => {
+    setRenamingId(pipeline.id);
+    setRenameValue(pipeline.name);
+  };
+
+  const handleCancelRename = () => {
+    setRenamingId(null);
+    setRenameValue('');
+  };
+
+  const handleConfirmRename = async (pipeline: PipelineRecord) => {
+    const trimmedName = renameValue.trim();
+    if (trimmedName && trimmedName !== pipeline.name) {
+      await updateOneRecord({
+        objectNameSingular: 'pipeline',
+        idToUpdate: pipeline.id,
+        updateOneRecordInput: { name: trimmedName },
+      });
+    }
+    setRenamingId(null);
+    setRenameValue('');
+  };
+
   return (
     <SettingsPageLayout
       title={t`Pipelines`}
@@ -199,37 +261,86 @@ export const SettingsPipelines = () => {
           ) : (
             pipelines.map((pipeline, index) => (
               <StyledPipelineRow key={pipeline.id}>
-                <StyledPipelineName>{pipeline.name}</StyledPipelineName>
-                {/* First pipeline by position is the default */}
-                {index === 0 && (
-                  <StyledDefaultBadge>{t`Default`}</StyledDefaultBadge>
+                {renamingId === pipeline.id ? (
+                  <StyledRenameInput>
+                    <TextInput
+                      value={renameValue}
+                      onChange={setRenameValue}
+                      autoFocus
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          handleConfirmRename(pipeline);
+                        } else if (event.key === 'Escape') {
+                          handleCancelRename();
+                        }
+                      }}
+                    />
+                    <Button
+                      Icon={IconCheck}
+                      size="small"
+                      variant="tertiary"
+                      disabled={!renameValue.trim()}
+                      onClick={() => handleConfirmRename(pipeline)}
+                      ariaLabel={t`Confirm rename`}
+                    />
+                    <Button
+                      Icon={IconX}
+                      size="small"
+                      variant="tertiary"
+                      onClick={handleCancelRename}
+                      ariaLabel={t`Cancel rename`}
+                    />
+                  </StyledRenameInput>
+                ) : (
+                  <>
+                    <StyledPipelineName>{pipeline.name}</StyledPipelineName>
+                    {pipeline.isDefault === true && (
+                      <StyledDefaultBadge>{t`Default`}</StyledDefaultBadge>
+                    )}
+                    <StyledRowActions>
+                      <Button
+                        Icon={IconPencil}
+                        size="small"
+                        variant="tertiary"
+                        onClick={() => handleStartRename(pipeline)}
+                        ariaLabel={t`Rename pipeline`}
+                      />
+                      {pipeline.isDefault !== true && (
+                        <Button
+                          Icon={IconStar}
+                          size="small"
+                          variant="tertiary"
+                          onClick={() => handleSetDefault(pipeline)}
+                          ariaLabel={t`Set as default pipeline`}
+                        />
+                      )}
+                      <Button
+                        Icon={IconChevronUp}
+                        size="small"
+                        variant="tertiary"
+                        disabled={index === 0}
+                        onClick={() => handleMoveUp(pipeline)}
+                        ariaLabel={t`Move pipeline up`}
+                      />
+                      <Button
+                        Icon={IconChevronDown}
+                        size="small"
+                        variant="tertiary"
+                        disabled={index === pipelines.length - 1}
+                        onClick={() => handleMoveDown(pipeline)}
+                        ariaLabel={t`Move pipeline down`}
+                      />
+                      <Button
+                        Icon={IconTrash}
+                        size="small"
+                        variant="tertiary"
+                        accent="danger"
+                        onClick={() => handleDelete(pipeline.id)}
+                        ariaLabel={t`Delete pipeline`}
+                      />
+                    </StyledRowActions>
+                  </>
                 )}
-                <StyledRowActions>
-                  <Button
-                    Icon={IconChevronUp}
-                    size="small"
-                    variant="tertiary"
-                    disabled={index === 0}
-                    onClick={() => handleMoveUp(pipeline)}
-                    ariaLabel={t`Move pipeline up`}
-                  />
-                  <Button
-                    Icon={IconChevronDown}
-                    size="small"
-                    variant="tertiary"
-                    disabled={index === pipelines.length - 1}
-                    onClick={() => handleMoveDown(pipeline)}
-                    ariaLabel={t`Move pipeline down`}
-                  />
-                  <Button
-                    Icon={IconTrash}
-                    size="small"
-                    variant="tertiary"
-                    accent="danger"
-                    onClick={() => handleDelete(pipeline.id)}
-                    ariaLabel={t`Delete pipeline`}
-                  />
-                </StyledRowActions>
               </StyledPipelineRow>
             ))
           )}

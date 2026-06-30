@@ -16,6 +16,7 @@ export const usePipelines = (): UsePipelinesResult => {
       id: true,
       name: true,
       position: true,
+      isDefault: true,
       pipelineStages: {
         edges: {
           node: {

@@ -4,7 +4,10 @@ import { v4 } from 'uuid';
 import { useMutation } from '@apollo/client/react';
 
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
-import { type PipelineRecord, type PipelineStageRecord } from '@/pipelines/types/PipelineRecord';
+import {
+  type PipelineRecord,
+  type PipelineStageRecord,
+} from '@/pipelines/types/PipelineRecord';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { viewsSelector } from '@/views/states/selectors/viewsSelector';
 import {
@@ -37,7 +40,7 @@ export const useEnsurePipelineView = () => {
     (field) => field.name === 'pipeline',
   );
 
-  const allViews = useAtomStateValue(viewsSelector);
+  const views = useAtomStateValue(viewsSelector);
 
   const [createViewMutation] = useMutation(CreateViewDocument);
   const [createManyViewGroupsMutation] = useMutation(
@@ -67,7 +70,7 @@ export const useEnsurePipelineView = () => {
       // pipeline, is grouped by the pipelineStage relation field, and is
       // already scoped to this pipeline via a pipeline IS-filter.
       // Checking the filter prevents two same-named pipelines from colliding.
-      const existingView = allViews.find((view) => {
+      const existingView = views.find((view) => {
         if (
           view.objectMetadataId !== opportunityObjectMetadataId ||
           view.type !== ViewType.KANBAN ||
@@ -170,7 +173,7 @@ export const useEnsurePipelineView = () => {
       return newViewId;
     },
     [
-      allViews,
+      views,
       opportunityMetadataItem.id,
       pipelineStageField,
       pipelineField,

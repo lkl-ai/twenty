@@ -11,6 +11,7 @@ export type PipelineRecord = ObjectRecord & {
   id: string;
   name: string;
   position: number;
+  isDefault?: boolean;
   pipelineStages?: {
     edges: Array<{ node: PipelineStageRecord }>;
   };

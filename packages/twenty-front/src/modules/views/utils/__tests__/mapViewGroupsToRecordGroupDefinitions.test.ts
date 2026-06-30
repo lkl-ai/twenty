@@ -1,6 +1,4 @@
-import {
-  mapViewGroupsToRecordGroupDefinitions,
-} from '@/views/utils/mapViewGroupsToRecordGroupDefinitions';
+import { mapViewGroupsToRecordGroupDefinitions } from '@/views/utils/mapViewGroupsToRecordGroupDefinitions';
 import { RecordGroupDefinitionType } from '@/object-record/record-group/types/RecordGroupDefinition';
 import { FieldMetadataType } from '~/generated-metadata/graphql';
 import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
