@@ -50,12 +50,8 @@ describe('pipeline + pipelineStage standard objects - schema materialization', (
 
     expect(opportunityObject).toBeDefined();
 
-    if (!opportunityObject) {
-      return;
-    }
-
     const fields = await queryFieldMetadataByObjectMetadataId(
-      opportunityObject.id,
+      opportunityObject!.id,
     );
     const fieldNames = fields.map((f) => f.name);
 
