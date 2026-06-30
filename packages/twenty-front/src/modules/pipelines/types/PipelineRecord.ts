@@ -1,0 +1,17 @@
+import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
+
+export type PipelineStageRecord = ObjectRecord & {
+  id: string;
+  name: string;
+  position: number;
+  pipelineId: string;
+};
+
+export type PipelineRecord = ObjectRecord & {
+  id: string;
+  name: string;
+  position: number;
+  pipelineStages?: {
+    edges: Array<{ node: PipelineStageRecord }>;
+  };
+};
