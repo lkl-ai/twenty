@@ -17,7 +17,6 @@ import {
   CreateManyViewGroupsDocument,
   DeleteViewGroupDocument,
   UpdateManyViewGroupsDocument,
-  ViewFilterOperand,
 } from '~/generated-metadata/graphql';
 import { isDefined } from 'twenty-shared/utils';
 
@@ -115,14 +114,15 @@ export const useEditPipeline = (pipeline: PipelineRecord) => {
       if (stagesToCreate.length > 0) {
         await createManyViewGroupsMutation({
           variables: {
-            inputs: stagesToCreate.map((stage, index) => ({
+            inputs: stagesToCreate.map((stage) => ({
               id: v4(),
               viewId,
               fieldValue: stage.id,
-              position:
-                existingGroups.length +
-                groupsToUpdate.length +
-                index,
+              // position = index in the full sorted-stages list, matching the
+              // contract used by useEnsurePipelineView (position: index).
+              // Using existingGroups.length would overshoot when some groups
+              // were deleted in the same sync pass.
+              position: sortedStages.indexOf(stage),
               isVisible: true,
             })),
           },
@@ -209,9 +209,7 @@ export const useEditPipeline = (pipeline: PipelineRecord) => {
   );
 
   const reorderStages = useCallback(
-    async (
-      nextStages: PipelineStageRecord[],
-    ): Promise<void> => {
+    async (nextStages: PipelineStageRecord[]): Promise<void> => {
       // Persist the new positions on each stage record.
       await Promise.all(
         nextStages.map((stage) =>

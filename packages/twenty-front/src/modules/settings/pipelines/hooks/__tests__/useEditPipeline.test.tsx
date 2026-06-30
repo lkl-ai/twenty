@@ -1,5 +1,4 @@
-import { renderHook } from '@testing-library/react';
-import { act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 
 import { useCreateOneRecord } from '@/object-record/hooks/useCreateOneRecord';
 import { useDeleteOneRecord } from '@/object-record/hooks/useDeleteOneRecord';
@@ -82,9 +81,7 @@ const mockStages = [
 const mockCreateOneRecord = jest.fn();
 const mockUpdateOneRecord = jest.fn().mockResolvedValue(undefined);
 const mockDeleteOneRecord = jest.fn().mockResolvedValue(undefined);
-const mockEnsurePipelineView = jest
-  .fn()
-  .mockResolvedValue('view-1');
+const mockEnsurePipelineView = jest.fn().mockResolvedValue('view-1');
 
 const mockViews = [
   {
@@ -143,6 +140,51 @@ describe('useEditPipeline', () => {
       }),
     );
     expect(mockEnsurePipelineView).toHaveBeenCalled();
+  });
+
+  it('syncViewGroups assigns new view-group position = index in sorted stage list (not existingGroups.length offset)', async () => {
+    // Simulate a state where view-1 has NO existing view groups (e.g. all
+    // were deleted in a prior pass).  When we then create a new group for
+    // stage-2 (which is at sorted index 1 inside a two-stage list), the
+    // position must be 1 — not 0 + 0 + 0 (the old formula).
+    const viewsWithNoGroups = [{ id: 'view-1', viewGroups: [] }];
+    (useAtomStateValue as jest.Mock).mockReturnValue(viewsWithNoGroups);
+
+    const stagesWithTwo = [
+      {
+        __typename: 'PipelineStage' as const,
+        id: 'stage-1',
+        name: 'Prospecting',
+        position: 0,
+        color: 'blue',
+        pipelineId: 'pipeline-1',
+      },
+      {
+        __typename: 'PipelineStage' as const,
+        id: 'stage-2',
+        name: 'Qualified',
+        position: 1,
+        color: 'green',
+        pipelineId: 'pipeline-1',
+      },
+    ];
+
+    const { result } = renderHook(() => useEditPipeline(mockPipeline));
+
+    await act(async () => {
+      await result.current.syncViewGroups(stagesWithTwo);
+    });
+
+    expect(mockCreateManyViewGroupsMutation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variables: expect.objectContaining({
+          inputs: expect.arrayContaining([
+            expect.objectContaining({ fieldValue: 'stage-1', position: 0 }),
+            expect.objectContaining({ fieldValue: 'stage-2', position: 1 }),
+          ]),
+        }),
+      }),
+    );
   });
 
   it('deleteStage deletes the record and re-syncs view groups', async () => {
