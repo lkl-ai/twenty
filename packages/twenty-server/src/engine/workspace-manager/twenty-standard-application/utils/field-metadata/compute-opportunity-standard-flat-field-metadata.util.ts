@@ -518,9 +518,7 @@ export const buildOpportunityStandardFlatFieldMetadatas = ({
       morphId: null,
       fieldName: 'pipelineStage',
       label: i18nLabel(msg`Pipeline Stage`),
-      description: i18nLabel(
-        msg`The pipeline stage this opportunity is in`,
-      ),
+      description: i18nLabel(msg`The pipeline stage this opportunity is in`),
       icon: 'IconProgressCheck',
       isNullable: true,
       targetObjectName: 'pipelineStage',

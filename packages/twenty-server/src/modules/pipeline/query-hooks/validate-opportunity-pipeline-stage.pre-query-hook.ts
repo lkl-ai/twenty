@@ -71,10 +71,9 @@ export async function validatePipelineStageConsistency({
   }
 
   // Load the pipeline stage and verify it belongs to the effective pipeline.
-  const pipelineStageRepository =
-    await globalWorkspaceOrmManager.getRepository<
-      PipelineStageWorkspaceEntity & { pipelineId: string | null }
-    >(workspaceId, 'pipelineStage');
+  const pipelineStageRepository = await globalWorkspaceOrmManager.getRepository<
+    PipelineStageWorkspaceEntity & { pipelineId: string | null }
+  >(workspaceId, 'pipelineStage');
 
   const stage = await pipelineStageRepository.findOne({
     where: {
@@ -97,9 +96,7 @@ export async function validatePipelineStageConsistency({
 
 @Injectable()
 @WorkspaceQueryHook('opportunity.createOne')
-export class ValidateOpportunityPipelineStageCreateOnePreQueryHook
-  implements WorkspacePreQueryHookInstance
-{
+export class ValidateOpportunityPipelineStageCreateOnePreQueryHook implements WorkspacePreQueryHookInstance {
   constructor(
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
   ) {}
@@ -123,9 +120,7 @@ export class ValidateOpportunityPipelineStageCreateOnePreQueryHook
 
 @Injectable()
 @WorkspaceQueryHook('opportunity.updateOne')
-export class ValidateOpportunityPipelineStageUpdateOnePreQueryHook
-  implements WorkspacePreQueryHookInstance
-{
+export class ValidateOpportunityPipelineStageUpdateOnePreQueryHook implements WorkspacePreQueryHookInstance {
   constructor(
     private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
   ) {}

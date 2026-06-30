@@ -25,11 +25,9 @@ jest.mock('@/ui/layout/draggable-list/components/DraggableList', () => ({
 }));
 
 jest.mock('@/ui/layout/draggable-list/components/DraggableItem', () => ({
-  DraggableItem: ({
-    itemComponent,
-  }: {
-    itemComponent: ReactNode;
-  }) => <>{itemComponent}</>,
+  DraggableItem: ({ itemComponent }: { itemComponent: ReactNode }) => (
+    <>{itemComponent}</>
+  ),
 }));
 
 // Stub dropdown — renders clickable + content inline
@@ -49,9 +47,7 @@ jest.mock('@/ui/layout/dropdown/components/Dropdown', () => ({
 }));
 
 jest.mock('@/ui/layout/dropdown/components/DropdownContent', () => ({
-  DropdownContent: ({ children }: { children: ReactNode }) => (
-    <>{children}</>
-  ),
+  DropdownContent: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
 jest.mock('@/ui/layout/dropdown/components/DropdownMenuItemsContainer', () => ({

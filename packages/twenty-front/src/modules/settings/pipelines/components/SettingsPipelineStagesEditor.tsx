@@ -17,11 +17,7 @@ import { DropdownContent } from '@/ui/layout/dropdown/components/DropdownContent
 import { DropdownMenuItemsContainer } from '@/ui/layout/dropdown/components/DropdownMenuItemsContainer';
 import { useCloseDropdown } from '@/ui/layout/dropdown/hooks/useCloseDropdown';
 import { ColorSample } from 'twenty-ui/data-display';
-import {
-  IconGripVertical,
-  IconPlus,
-  IconTrash,
-} from 'twenty-ui/icon';
+import { IconGripVertical, IconPlus, IconTrash } from 'twenty-ui/icon';
 import { LightButton, LightIconButton } from 'twenty-ui/input';
 import { type ColorLabels, MenuItemSelectColor } from 'twenty-ui/navigation';
 import { MAIN_COLOR_NAMES, type ThemeColor } from 'twenty-ui/theme';
@@ -136,8 +132,13 @@ export const SettingsPipelineStagesEditor = ({
       },
     });
 
-  const { createStage, deleteStage, renameStage, setStageColor, reorderStages } =
-    useEditPipeline(pipeline);
+  const {
+    createStage,
+    deleteStage,
+    renameStage,
+    setStageColor,
+    reorderStages,
+  } = useEditPipeline(pipeline);
 
   const { closeDropdown: closeColorDropdown } = useCloseDropdown();
 
@@ -226,7 +227,12 @@ export const SettingsPipelineStagesEditor = ({
                           dropdownPlacement="bottom-start"
                           clickableComponent={
                             <StyledColorContainer>
-                              <ColorSample colorName={(stage.color ?? DEFAULT_STAGE_COLOR) as ThemeColor} />
+                              <ColorSample
+                                colorName={
+                                  (stage.color ??
+                                    DEFAULT_STAGE_COLOR) as ThemeColor
+                                }
+                              />
                             </StyledColorContainer>
                           }
                           dropdownComponents={
@@ -236,10 +242,16 @@ export const SettingsPipelineStagesEditor = ({
                                   <MenuItemSelectColor
                                     key={colorName}
                                     color={colorName}
-                                    selected={colorName === (stage.color ?? DEFAULT_STAGE_COLOR)}
+                                    selected={
+                                      colorName ===
+                                      (stage.color ?? DEFAULT_STAGE_COLOR)
+                                    }
                                     colorLabels={colorLabels}
                                     onClick={async () => {
-                                      await handleColorChange(stage.id, colorName);
+                                      await handleColorChange(
+                                        stage.id,
+                                        colorName,
+                                      );
                                       closeColorDropdown(colorDropdownId);
                                     }}
                                   />
