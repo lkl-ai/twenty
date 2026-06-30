@@ -1,5 +1,6 @@
 import { MAIN_CONTEXT_STORE_INSTANCE_ID } from '@/context-store/constants/MainContextStoreInstanceId';
 import { contextStoreCurrentViewIdComponentState } from '@/context-store/states/contextStoreCurrentViewIdComponentState';
+import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useEnsurePipelineView } from '@/pipelines/hooks/useEnsurePipelineView';
 import { usePipelines } from '@/pipelines/hooks/usePipelines';
 import { type PipelineRecord } from '@/pipelines/types/PipelineRecord';
@@ -9,6 +10,7 @@ import { useChangeView } from '@/views/hooks/useChangeView';
 import { viewsSelector } from '@/views/states/selectors/viewsSelector';
 import { type ViewFilter } from '@/views/types/ViewFilter';
 import { styled } from '@linaria/react';
+import { type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 import { themeCssVariables } from 'twenty-ui/theme-constants';
 
@@ -22,7 +24,13 @@ const StyledTabBar = styled.div`
   padding: 0 ${themeCssVariables.spacing[3]};
 `;
 
-const StyledTab = styled.button<{ isActive: boolean }>`
+// Linaria forwards all props to the underlying DOM element. To prevent
+// `isActive` (a non-standard HTML attribute) from reaching the <button> and
+// triggering React's "unknown prop" warning, we destructure it in a plain
+// wrapper component and pass only valid HTML attributes to the styled inner
+// element. This is the codebase convention for boolean props that must not
+// reach the DOM — see PageLayoutTabListDroppableMoreButton, RecordTableRowDiv.
+const StyledTabInner = styled.button<{ isActive: boolean }>`
   background: none;
   border: none;
   border-bottom: 2px solid
@@ -46,6 +54,18 @@ const StyledTab = styled.button<{ isActive: boolean }>`
     color: ${themeCssVariables.font.color.primary};
   }
 `;
+
+type StyledTabProps = {
+  isActive: boolean;
+  onClick: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
+  children: ReactNode;
+};
+
+const StyledTab = ({ isActive, onClick, children }: StyledTabProps) => (
+  <StyledTabInner isActive={isActive} onClick={onClick}>
+    {children}
+  </StyledTabInner>
+);
 
 // Returns the pipeline id that the given filter array scopes the view to,
 // or undefined if no such filter is found.
@@ -80,6 +100,18 @@ export const PipelineSwitcher = () => {
   const { ensurePipelineView } = useEnsurePipelineView();
   const { changeView } = useChangeView();
 
+  const { objectMetadataItem: opportunityMetadataItem } = useObjectMetadataItem(
+    { objectNameSingular: 'opportunity' },
+  );
+
+  // Resolve the pipeline relation field's metadata id from the Opportunity
+  // object schema. This avoids a heuristic approach that could misfire on
+  // other relation filters (company, assignee) that share the same IS-filter
+  // shape.
+  const pipelineFieldMetadataId = opportunityMetadataItem.fields?.find(
+    (field) => field.name === 'pipeline',
+  )?.id;
+
   const contextStoreCurrentViewId = useAtomComponentStateValue(
     contextStoreCurrentViewIdComponentState,
     MAIN_CONTEXT_STORE_INSTANCE_ID,
@@ -91,33 +123,18 @@ export const PipelineSwitcher = () => {
     ? views.find((view) => view.id === contextStoreCurrentViewId)
     : undefined;
 
-  // Determine the active pipeline by scanning the current view's filters for
-  // an IS-filter that matches the pipeline field. We find the pipeline field
-  // id by looking for a filter whose parsed value contains selectedRecordIds
-  // — the first such IS-filter is the pipeline scope filter.
+  // Determine the active pipeline by finding the pipeline IS-filter in the
+  // current view and reading the first selectedRecordId from its value.
+  // We match exclusively on the pipeline field's fieldMetadataId so other
+  // relation filters (company, assignee) on Opportunity are never mistaken
+  // for the pipeline scope filter.
   const activePipelineId: string | undefined = (() => {
-    if (!isDefined(currentView)) {
-      return undefined;
-    }
-    const pipelineIsFilter = currentView.viewFilters.find((filter) => {
-      if ((filter.operand as string) !== 'IS') {
-        return false;
-      }
-      try {
-        const parsed = JSON.parse(filter.value) as {
-          selectedRecordIds?: unknown;
-        };
-        return Array.isArray(parsed.selectedRecordIds);
-      } catch {
-        return false;
-      }
-    });
-    if (!isDefined(pipelineIsFilter)) {
+    if (!isDefined(currentView) || !isDefined(pipelineFieldMetadataId)) {
       return undefined;
     }
     return getPipelineIdFromFilters(
       currentView.viewFilters,
-      pipelineIsFilter.fieldMetadataId,
+      pipelineFieldMetadataId,
     );
   })();
 

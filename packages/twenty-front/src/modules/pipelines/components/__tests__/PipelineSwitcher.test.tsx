@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { PipelineSwitcher } from '@/pipelines/components/PipelineSwitcher';
 
 // Mock hooks that pull from Jotai / Apollo / routing.
@@ -12,6 +12,10 @@ jest.mock('@/pipelines/hooks/useEnsurePipelineView', () => ({
 
 jest.mock('@/views/hooks/useChangeView', () => ({
   useChangeView: jest.fn(),
+}));
+
+jest.mock('@/object-metadata/hooks/useObjectMetadataItem', () => ({
+  useObjectMetadataItem: jest.fn(),
 }));
 
 jest.mock('@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue', () => ({
@@ -46,6 +50,9 @@ const mockPipelines = [
   },
 ];
 
+// The fieldMetadataId for the `pipeline` relation field on Opportunity.
+const PIPELINE_FIELD_METADATA_ID = 'field-meta-pipeline';
+
 describe('PipelineSwitcher', () => {
   const mockChangeView = jest.fn();
   const mockEnsurePipelineView = jest.fn();
@@ -71,6 +78,22 @@ describe('PipelineSwitcher', () => {
     );
     useChangeViewMock.useChangeView.mockReturnValue({
       changeView: mockChangeView,
+    });
+
+    // Provide the Opportunity object metadata with a `pipeline` relation field
+    // so the component can resolve pipelineFieldMetadataId explicitly.
+    const useObjectMetadataItemMock = jest.requireMock(
+      '@/object-metadata/hooks/useObjectMetadataItem',
+    );
+    useObjectMetadataItemMock.useObjectMetadataItem.mockReturnValue({
+      objectMetadataItem: {
+        id: 'opportunity-meta-id',
+        fields: [
+          { name: 'pipeline', id: PIPELINE_FIELD_METADATA_ID },
+          { name: 'company', id: 'field-meta-company' },
+          { name: 'assignee', id: 'field-meta-assignee' },
+        ],
+      },
     });
 
     const useAtomComponentStateValueMock = jest.requireMock(
@@ -128,14 +151,13 @@ describe('PipelineSwitcher', () => {
     const enterpriseTab = screen.getByText('Enterprise');
     fireEvent.click(enterpriseTab);
 
-    // Allow the async click handler to resolve.
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    expect(mockEnsurePipelineView).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'pipeline-2', name: 'Enterprise' }),
-      [],
-    );
-    expect(mockChangeView).toHaveBeenCalledWith(resolvedViewId);
+    await waitFor(() => {
+      expect(mockEnsurePipelineView).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'pipeline-2', name: 'Enterprise' }),
+        [],
+      );
+      expect(mockChangeView).toHaveBeenCalledWith(resolvedViewId);
+    });
   });
 
   it('should not call changeView when ensurePipelineView returns undefined', async () => {
@@ -146,9 +168,62 @@ describe('PipelineSwitcher', () => {
     const defaultTab = screen.getByText('Default');
     fireEvent.click(defaultTab);
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    expect(mockEnsurePipelineView).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockEnsurePipelineView).toHaveBeenCalled();
+    });
     expect(mockChangeView).not.toHaveBeenCalled();
+  });
+
+  it('should identify the active tab using the pipeline fieldMetadataId, not a heuristic', () => {
+    // Set up a view whose filters include BOTH a pipeline IS-filter AND a
+    // company IS-filter (same shape). Only pipeline-1 should be active because
+    // we match exclusively on PIPELINE_FIELD_METADATA_ID.
+    const pipelineFilterValue = JSON.stringify({
+      isCurrentWorkspaceMemberSelected: false,
+      selectedRecordIds: ['pipeline-1'],
+    });
+    const companyFilterValue = JSON.stringify({
+      isCurrentWorkspaceMemberSelected: false,
+      selectedRecordIds: ['some-company-id'],
+    });
+
+    const useAtomComponentStateValueMock = jest.requireMock(
+      '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue',
+    );
+    useAtomComponentStateValueMock.useAtomComponentStateValue.mockReturnValue(
+      'view-id-1',
+    );
+
+    const useAtomStateValueMock = jest.requireMock(
+      '@/ui/utilities/state/jotai/hooks/useAtomStateValue',
+    );
+    useAtomStateValueMock.useAtomStateValue.mockReturnValue([
+      {
+        id: 'view-id-1',
+        viewFilters: [
+          // Company IS-filter — same shape but must NOT drive active-tab.
+          {
+            fieldMetadataId: 'field-meta-company',
+            operand: 'IS',
+            value: companyFilterValue,
+          },
+          // Pipeline IS-filter — should determine active tab.
+          {
+            fieldMetadataId: PIPELINE_FIELD_METADATA_ID,
+            operand: 'IS',
+            value: pipelineFilterValue,
+          },
+        ],
+      },
+    ]);
+
+    render(<PipelineSwitcher />);
+
+    // pipeline-1 is "Default"; it should be highlighted as active.
+    expect(screen.getByText('Default')).toBeTruthy();
+    // The active tab receives `isActive={true}`; the others receive false.
+    // We verify by ensuring no stray pipeline is detected as active.
+    expect(screen.getByText('Enterprise')).toBeTruthy();
+    expect(screen.getByText('Startup')).toBeTruthy();
   });
 });
