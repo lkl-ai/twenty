@@ -849,6 +849,61 @@ export const STANDARD_FLAT_OBJECT_METADATA_BUILDERS_BY_OBJECT_NAME = {
       twentyStandardApplicationId,
       now,
     }),
+  pipeline: ({
+    now,
+    workspaceId,
+    standardObjectMetadataRelatedEntityIds,
+    twentyStandardApplicationId,
+    dependencyFlatEntityMaps,
+  }: Omit<CreateStandardObjectArgs<'pipeline'>, 'context' | 'objectName'>) =>
+    createStandardObjectFlatMetadata({
+      objectName: 'pipeline',
+      dependencyFlatEntityMaps,
+      context: {
+        universalIdentifier: STANDARD_OBJECTS.pipeline.universalIdentifier,
+        nameSingular: 'pipeline',
+        namePlural: 'pipelines',
+        labelSingular: i18nLabel(msg`Pipeline`),
+        labelPlural: i18nLabel(msg`Pipelines`),
+        description: i18nLabel(msg`A pipeline`),
+        icon: 'IconLayoutKanban',
+        isSearchable: false,
+        labelIdentifierFieldMetadataName: 'name',
+      },
+      workspaceId,
+      standardObjectMetadataRelatedEntityIds,
+      twentyStandardApplicationId,
+      now,
+    }),
+  pipelineStage: ({
+    now,
+    workspaceId,
+    standardObjectMetadataRelatedEntityIds,
+    twentyStandardApplicationId,
+    dependencyFlatEntityMaps,
+  }: Omit<
+    CreateStandardObjectArgs<'pipelineStage'>,
+    'context' | 'objectName'
+  >) =>
+    createStandardObjectFlatMetadata({
+      objectName: 'pipelineStage',
+      dependencyFlatEntityMaps,
+      context: {
+        universalIdentifier: STANDARD_OBJECTS.pipelineStage.universalIdentifier,
+        nameSingular: 'pipelineStage',
+        namePlural: 'pipelineStages',
+        labelSingular: i18nLabel(msg`Pipeline Stage`),
+        labelPlural: i18nLabel(msg`Pipeline Stages`),
+        description: i18nLabel(msg`A pipeline stage`),
+        icon: 'IconProgressCheck',
+        isSearchable: false,
+        labelIdentifierFieldMetadataName: 'name',
+      },
+      workspaceId,
+      standardObjectMetadataRelatedEntityIds,
+      twentyStandardApplicationId,
+      now,
+    }),
 } satisfies {
   [P in AllStandardObjectName]: (
     args: Omit<CreateStandardObjectArgs<P>, 'context' | 'objectName'>,
