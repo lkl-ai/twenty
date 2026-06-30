@@ -32,6 +32,8 @@ import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadat
 import { getRecordFromRecordNode } from '@/object-record/cache/utils/getRecordFromRecordNode';
 import { useUpdateOneRecord } from '@/object-record/hooks/useUpdateOneRecord';
 import { buildMorphRelationUpdateInput } from '@/object-record/record-field/ui/meta-types/input/utils/buildMorphRelationUpdateInput';
+import { useOpportunityPipelineStageReset } from '@/pipelines/hooks/useOpportunityPipelineStageReset';
+import { type PipelineRecord } from '@/pipelines/types/PipelineRecord';
 import { isFieldArray } from '@/object-record/record-field/ui/types/guards/isFieldArray';
 import { isFieldArrayValue } from '@/object-record/record-field/ui/types/guards/isFieldArrayValue';
 import { isFieldBoolean } from '@/object-record/record-field/ui/types/guards/isFieldBoolean';
@@ -70,6 +72,7 @@ export const usePersistField = ({
   const { objectMetadataItems } = useObjectMetadataItems();
 
   const { updateOneRecord } = useUpdateOneRecord();
+  const { resetPipelineStage } = useOpportunityPipelineStageReset();
 
   const store = useStore();
   const { upsertRecordsInStore } = useUpsertRecordsInStore();
@@ -214,6 +217,21 @@ export const usePersistField = ({
               [getForeignKeyNameFromRelationFieldName(fieldName)]: true,
             },
           });
+
+          // When the pipeline relation changes on an opportunity, reset
+          // pipelineStage to the first stage of the new pipeline. This keeps
+          // the stage consistent with the pipeline and prevents the backend
+          // from rejecting a cross-pipeline stage assignment.
+          if (
+            objectMetadataItem.nameSingular === 'opportunity' &&
+            fieldName === 'pipeline'
+          ) {
+            await resetPipelineStage({
+              opportunityId: recordId,
+              newPipeline: valueToPersist as PipelineRecord | null | undefined,
+            });
+          }
+
           return;
         }
 
@@ -294,6 +312,7 @@ export const usePersistField = ({
     [
       objectMetadataItem?.nameSingular,
       objectMetadataItems,
+      resetPipelineStage,
       store,
       updateOneRecord,
       upsertRecordsInStore,
