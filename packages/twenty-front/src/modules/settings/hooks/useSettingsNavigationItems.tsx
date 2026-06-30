@@ -26,6 +26,7 @@ import {
   IconHelpCircle,
   IconHierarchy2,
   IconLayout,
+  IconLayoutKanban,
   IconMail,
   IconMessage,
   IconPlug,
@@ -133,6 +134,12 @@ const useSettingsNavigationItems = (): SettingsNavigationSection[] => {
           path: SettingsPath.Layout,
           Icon: IconLayout,
           isHidden: !permissionMap[PermissionFlagType.LAYOUTS],
+        },
+        {
+          label: t`Pipelines`,
+          path: SettingsPath.Pipelines,
+          Icon: IconLayoutKanban,
+          isHidden: !permissionMap[PermissionFlagType.WORKSPACE],
         },
         {
           label: t`Members`,

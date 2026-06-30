@@ -22,6 +22,7 @@ export enum SettingsPath {
   ObjectFieldEdit = 'objects/:objectNamePlural/:fieldName',
   NewObject = 'objects/new',
   Layout = 'layout',
+  Pipelines = 'pipelines',
   WorkspaceMembersPage = 'members',
   WorkspaceMemberPage = 'members/:workspaceMemberId',
   General = 'general',

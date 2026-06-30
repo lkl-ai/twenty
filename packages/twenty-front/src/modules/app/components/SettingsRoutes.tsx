@@ -589,6 +589,14 @@ const SettingsRoleAddObjectLevel = lazy(() =>
   ),
 );
 
+const SettingsPipelines = lazy(() =>
+  import('@/settings/pipelines/components/SettingsPipelines').then(
+    (module) => ({
+      default: module.SettingsPipelines,
+    }),
+  ),
+);
+
 type SettingsRoutesProps = {
   isFunctionSettingsEnabled?: boolean;
   isAdminPageEnabled?: boolean;
@@ -681,6 +689,10 @@ export const SettingsRoutes = ({ isAdminPageEnabled }: SettingsRoutesProps) => (
         <Route
           path={SettingsPath.PublicDomain}
           element={<SettingPublicDomain />}
+        />
+        <Route
+          path={SettingsPath.Pipelines}
+          element={<SettingsPipelines />}
         />
       </Route>
       <Route
