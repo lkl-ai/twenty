@@ -223,6 +223,82 @@ describe('validatePipelineStageConsistency', () => {
       }),
     ).resolves.toBeUndefined();
   });
+
+  // --- pipeline-only update cases (the integrity gap being closed) ---
+
+  it('should throw when only pipelineId changes to a pipeline that does not contain the persisted stage', async () => {
+    // Existing opportunity is on pipeline-a with stage-a
+    mockOpportunityRepository.findOne.mockResolvedValue({
+      id: 'opp-1',
+      pipelineId: 'pipeline-a',
+      pipelineStageId: 'stage-a',
+    } as unknown as OpportunityWorkspaceEntity);
+
+    // stage-a belongs to pipeline-a, NOT pipeline-b
+    mockPipelineStageRepository.findOne.mockResolvedValue({
+      id: 'stage-a',
+      pipelineId: 'pipeline-a',
+    } as unknown as PipelineStageWorkspaceEntity);
+
+    await expect(
+      validatePipelineStageConsistency({
+        workspaceId: WORKSPACE_ID,
+        incomingPipelineId: 'pipeline-b',
+        incomingPipelineStageId: undefined,
+        existingOpportunityId: 'opp-1',
+        globalWorkspaceOrmManager:
+          mockGlobalWorkspaceOrmManager as unknown as GlobalWorkspaceOrmManager,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('should not throw when only pipelineId changes and the persisted stage belongs to the new pipeline', async () => {
+    // Existing opportunity is on pipeline-a with stage-shared (which also exists in pipeline-b)
+    mockOpportunityRepository.findOne.mockResolvedValue({
+      id: 'opp-1',
+      pipelineId: 'pipeline-a',
+      pipelineStageId: 'stage-shared',
+    } as unknown as OpportunityWorkspaceEntity);
+
+    // stage-shared belongs to pipeline-b (the new target pipeline)
+    mockPipelineStageRepository.findOne.mockResolvedValue({
+      id: 'stage-shared',
+      pipelineId: 'pipeline-b',
+    } as unknown as PipelineStageWorkspaceEntity);
+
+    await expect(
+      validatePipelineStageConsistency({
+        workspaceId: WORKSPACE_ID,
+        incomingPipelineId: 'pipeline-b',
+        incomingPipelineStageId: undefined,
+        existingOpportunityId: 'opp-1',
+        globalWorkspaceOrmManager:
+          mockGlobalWorkspaceOrmManager as unknown as GlobalWorkspaceOrmManager,
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('should allow when only pipelineId changes and the record has no persisted stage', async () => {
+    // Existing opportunity is on pipeline-a with no stage
+    mockOpportunityRepository.findOne.mockResolvedValue({
+      id: 'opp-1',
+      pipelineId: 'pipeline-a',
+      pipelineStageId: null,
+    } as unknown as OpportunityWorkspaceEntity);
+
+    await expect(
+      validatePipelineStageConsistency({
+        workspaceId: WORKSPACE_ID,
+        incomingPipelineId: 'pipeline-b',
+        incomingPipelineStageId: undefined,
+        existingOpportunityId: 'opp-1',
+        globalWorkspaceOrmManager:
+          mockGlobalWorkspaceOrmManager as unknown as GlobalWorkspaceOrmManager,
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(mockPipelineStageRepository.findOne).not.toHaveBeenCalled();
+  });
 });
 
 // Smoke-test that the hook classes wire up correctly

@@ -38,6 +38,53 @@ export async function validatePipelineStageConsistency({
   existingOpportunityId: string | undefined;
   globalWorkspaceOrmManager: GlobalWorkspaceOrmManager;
 }): Promise<void> {
+  // Converse of the stage-only case: pipelineId is changing but pipelineStageId
+  // is absent from the payload, so the persisted stage stays in place.  We must
+  // verify that the persisted stage (if any) belongs to the NEW pipeline,
+  // otherwise a stale cross-pipeline stage would be silently persisted.
+  if (
+    isDefined(incomingPipelineId) &&
+    !isDefined(incomingPipelineStageId) &&
+    isDefined(existingOpportunityId)
+  ) {
+    const opportunityRepository =
+      await globalWorkspaceOrmManager.getRepository<OpportunityRecord>(
+        workspaceId,
+        'opportunity',
+      );
+
+    const existing = await opportunityRepository.findOne({
+      where: { id: existingOpportunityId } as unknown as Record<
+        string,
+        unknown
+      >,
+    });
+
+    const persistedStageId = existing?.pipelineStageId ?? null;
+
+    // No persisted stage → nothing to cross-validate.
+    if (!isDefined(persistedStageId)) {
+      return;
+    }
+
+    const pipelineStageRepository =
+      await globalWorkspaceOrmManager.getRepository<
+        PipelineStageWorkspaceEntity & { pipelineId: string | null }
+      >(workspaceId, 'pipelineStage');
+
+    const stage = await pipelineStageRepository.findOne({
+      where: { id: persistedStageId } as unknown as Record<string, unknown>,
+    });
+
+    if (isDefined(stage) && stage.pipelineId !== incomingPipelineId) {
+      throw new BadRequestException(
+        `Pipeline stage ${persistedStageId} does not belong to pipeline ${incomingPipelineId}`,
+      );
+    }
+
+    return;
+  }
+
   // Nothing to validate if stage is null/undefined — no constraint to violate.
   if (!isDefined(incomingPipelineStageId)) {
     return;
