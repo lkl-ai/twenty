@@ -108,8 +108,8 @@ export const PipelineSwitcher = () => {
   // nested `pipeline.pipelineStages` relation, which useFindManyRecords does
   // not reliably resolve at runtime (nested to-many connections come back
   // undefined). We filter by pipelineId per pipeline on click.
-  const { records: allPipelineStages } = useFindManyRecords<PipelineStageRecord>(
-    {
+  const { records: allPipelineStages } =
+    useFindManyRecords<PipelineStageRecord>({
       objectNameSingular: 'pipelineStage',
       recordGqlFields: {
         id: true,
@@ -118,8 +118,7 @@ export const PipelineSwitcher = () => {
         color: true,
         pipelineId: true,
       },
-    },
-  );
+    });
 
   const { objectMetadataItem: opportunityMetadataItem } = useObjectMetadataItem(
     { objectNameSingular: 'opportunity' },
