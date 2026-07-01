@@ -29,27 +29,55 @@ jest.mock('@/ui/utilities/state/jotai/hooks/useAtomStateValue', () => ({
   useAtomStateValue: jest.fn(),
 }));
 
+jest.mock('@/object-record/hooks/useFindManyRecords', () => ({
+  useFindManyRecords: jest.fn(),
+}));
+
 const mockPipelines = [
   {
     __typename: 'Pipeline' as const,
     id: 'pipeline-1',
     name: 'Default',
     position: 0,
-    pipelineStages: { edges: [] },
   },
   {
     __typename: 'Pipeline' as const,
     id: 'pipeline-2',
     name: 'Enterprise',
     position: 1,
-    pipelineStages: { edges: [] },
   },
   {
     __typename: 'Pipeline' as const,
     id: 'pipeline-3',
     name: 'Startup',
     position: 2,
-    pipelineStages: { edges: [] },
+  },
+];
+
+const mockPipelineStages = [
+  {
+    __typename: 'PipelineStage' as const,
+    id: 'stage-1',
+    name: 'Qualified',
+    position: 0,
+    color: 'blue',
+    pipelineId: 'pipeline-1',
+  },
+  {
+    __typename: 'PipelineStage' as const,
+    id: 'stage-2',
+    name: 'Proposal',
+    position: 0,
+    color: 'green',
+    pipelineId: 'pipeline-2',
+  },
+  {
+    __typename: 'PipelineStage' as const,
+    id: 'stage-3',
+    name: 'Negotiation',
+    position: 1,
+    color: 'yellow',
+    pipelineId: 'pipeline-2',
   },
 ];
 
@@ -109,6 +137,14 @@ describe('PipelineSwitcher', () => {
       '@/ui/utilities/state/jotai/hooks/useAtomStateValue',
     );
     useAtomStateValueMock.useAtomStateValue.mockReturnValue([]);
+
+    const useFindManyRecordsMock = jest.requireMock(
+      '@/object-record/hooks/useFindManyRecords',
+    );
+    useFindManyRecordsMock.useFindManyRecords.mockReturnValue({
+      records: mockPipelineStages,
+      loading: false,
+    });
   });
 
   it('should render one tab per pipeline', () => {
@@ -152,10 +188,15 @@ describe('PipelineSwitcher', () => {
     const enterpriseTab = screen.getByText('Enterprise');
     fireEvent.click(enterpriseTab);
 
+    // Only the two stages belonging to pipeline-2 should be passed.
+    const expectedStages = mockPipelineStages.filter(
+      (s) => s.pipelineId === 'pipeline-2',
+    );
+
     await waitFor(() => {
       expect(mockEnsurePipelineView).toHaveBeenCalledWith(
         expect.objectContaining({ id: 'pipeline-2', name: 'Enterprise' }),
-        [],
+        expectedStages,
       );
       expect(mockChangeView).toHaveBeenCalledWith(resolvedViewId);
     });
