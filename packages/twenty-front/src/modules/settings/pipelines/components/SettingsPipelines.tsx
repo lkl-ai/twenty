@@ -5,10 +5,7 @@ import { useDeleteOneRecord } from '@/object-record/hooks/useDeleteOneRecord';
 import { useUpdateOneRecord } from '@/object-record/hooks/useUpdateOneRecord';
 import { useEnsurePipelineView } from '@/pipelines/hooks/useEnsurePipelineView';
 import { usePipelines } from '@/pipelines/hooks/usePipelines';
-import {
-  type PipelineRecord,
-  type PipelineStageRecord,
-} from '@/pipelines/types/PipelineRecord';
+import { type PipelineRecord } from '@/pipelines/types/PipelineRecord';
 import { SettingsPageContainer } from '@/settings/components/SettingsPageContainer';
 import { SettingsPageLayout } from '@/settings/components/layout/SettingsPageLayout';
 import { SettingsPipelineStagesEditor } from '@/settings/pipelines/components/SettingsPipelineStagesEditor';
@@ -138,11 +135,9 @@ export const SettingsPipelines = () => {
 
     if (isDefined(created)) {
       const createdPipeline = created as unknown as PipelineRecord;
-      const stages: PipelineStageRecord[] =
-        createdPipeline.pipelineStages?.edges.map(
-          (edge: { node: PipelineStageRecord }) => edge.node,
-        ) ?? [];
-      await ensurePipelineView(createdPipeline, stages);
+      // A newly-created pipeline has no stages yet — pass an empty array.
+      // Stages are managed separately via SettingsPipelineStagesEditor.
+      await ensurePipelineView(createdPipeline, []);
     }
 
     setNewPipelineName('');

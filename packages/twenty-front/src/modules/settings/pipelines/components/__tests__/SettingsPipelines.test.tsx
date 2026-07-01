@@ -104,7 +104,6 @@ describe('SettingsPipelines', () => {
           id: '1',
           name: 'Sales Pipeline',
           position: 0,
-          pipelineStages: { edges: [] },
         },
       ],
       loading: false,
@@ -115,12 +114,11 @@ describe('SettingsPipelines', () => {
     expect(screen.getByText('Sales Pipeline')).toBeInTheDocument();
   });
 
-  it('create calls useCreateOneRecord and ensurePipelineView', async () => {
+  it('create calls useCreateOneRecord and ensurePipelineView with empty stages', async () => {
     const mockCreateOneRecord = jest.fn().mockResolvedValue({
       id: 'new-1',
       name: 'New Pipeline',
       position: 1,
-      pipelineStages: { edges: [] },
     });
     const mockEnsurePipelineView = jest.fn().mockResolvedValue(undefined);
 
@@ -149,7 +147,11 @@ describe('SettingsPipelines', () => {
     expect(mockCreateOneRecord).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'New Pipeline' }),
     );
-    expect(mockEnsurePipelineView).toHaveBeenCalled();
+    // A newly-created pipeline has no stages — ensurePipelineView receives []
+    expect(mockEnsurePipelineView).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'new-1' }),
+      [],
+    );
   });
 
   it('delete calls useDeleteOneRecord', async () => {
@@ -162,7 +164,6 @@ describe('SettingsPipelines', () => {
           id: '1',
           name: 'Sales Pipeline',
           position: 0,
-          pipelineStages: { edges: [] },
         },
       ],
       loading: false,
@@ -190,7 +191,6 @@ describe('SettingsPipelines', () => {
           id: '1',
           name: 'Sales Pipeline',
           position: 0,
-          pipelineStages: { edges: [] },
         },
       ],
       loading: false,
@@ -233,7 +233,6 @@ describe('SettingsPipelines', () => {
           name: 'Sales Pipeline',
           position: 0,
           isDefault: true,
-          pipelineStages: { edges: [] },
         },
         {
           __typename: 'Pipeline',
@@ -241,7 +240,6 @@ describe('SettingsPipelines', () => {
           name: 'Support Pipeline',
           position: 1,
           isDefault: false,
-          pipelineStages: { edges: [] },
         },
       ],
       loading: false,
@@ -286,7 +284,6 @@ describe('SettingsPipelines', () => {
           name: 'Sales Pipeline',
           position: 0,
           isDefault: false,
-          pipelineStages: { edges: [] },
         },
         {
           __typename: 'Pipeline',
@@ -294,7 +291,6 @@ describe('SettingsPipelines', () => {
           name: 'Support Pipeline',
           position: 1,
           isDefault: true,
-          pipelineStages: { edges: [] },
         },
       ],
       loading: false,

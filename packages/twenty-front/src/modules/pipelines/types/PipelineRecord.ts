@@ -13,7 +13,4 @@ export type PipelineRecord = ObjectRecord & {
   name: string;
   position: number;
   isDefault?: boolean;
-  pipelineStages?: {
-    edges: Array<{ node: PipelineStageRecord }>;
-  };
 };

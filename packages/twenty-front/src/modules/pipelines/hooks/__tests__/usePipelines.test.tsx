@@ -11,14 +11,12 @@ const mockPipelines = [
     id: 'pipeline-1',
     name: 'Default Pipeline',
     position: 0,
-    pipelineStages: { edges: [] },
   },
   {
     __typename: 'Pipeline',
     id: 'pipeline-2',
     name: 'Enterprise Pipeline',
     position: 1,
-    pipelineStages: { edges: [] },
   },
 ];
 
