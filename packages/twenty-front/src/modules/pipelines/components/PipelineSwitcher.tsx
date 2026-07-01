@@ -1,9 +1,13 @@
 import { MAIN_CONTEXT_STORE_INSTANCE_ID } from '@/context-store/constants/MainContextStoreInstanceId';
 import { contextStoreCurrentViewIdComponentState } from '@/context-store/states/contextStoreCurrentViewIdComponentState';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
+import { useFindManyRecords } from '@/object-record/hooks/useFindManyRecords';
 import { useEnsurePipelineView } from '@/pipelines/hooks/useEnsurePipelineView';
 import { usePipelines } from '@/pipelines/hooks/usePipelines';
-import { type PipelineRecord } from '@/pipelines/types/PipelineRecord';
+import {
+  type PipelineRecord,
+  type PipelineStageRecord,
+} from '@/pipelines/types/PipelineRecord';
 import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { useChangeView } from '@/views/hooks/useChangeView';
@@ -100,6 +104,23 @@ export const PipelineSwitcher = () => {
   const { ensurePipelineView } = useEnsurePipelineView();
   const { changeView } = useChangeView();
 
+  // Fetch stages with a flat top-level query rather than relying on the
+  // nested `pipeline.pipelineStages` relation, which useFindManyRecords does
+  // not reliably resolve at runtime (nested to-many connections come back
+  // undefined). We filter by pipelineId per pipeline on click.
+  const { records: allPipelineStages } = useFindManyRecords<PipelineStageRecord>(
+    {
+      objectNameSingular: 'pipelineStage',
+      recordGqlFields: {
+        id: true,
+        name: true,
+        position: true,
+        color: true,
+        pipelineId: true,
+      },
+    },
+  );
+
   const { objectMetadataItem: opportunityMetadataItem } = useObjectMetadataItem(
     { objectNameSingular: 'opportunity' },
   );
@@ -143,8 +164,9 @@ export const PipelineSwitcher = () => {
   }
 
   const handleTabClick = async (pipeline: PipelineRecord) => {
-    const stages =
-      pipeline.pipelineStages?.edges.map((edge) => edge.node) ?? [];
+    const stages = allPipelineStages.filter(
+      (stage) => stage.pipelineId === pipeline.id,
+    );
     const viewId = await ensurePipelineView(pipeline, stages);
     if (isDefined(viewId)) {
       changeView(viewId);
