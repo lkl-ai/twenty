@@ -32,18 +32,49 @@ if (!target) {
 }
 
 const source = fs.readFileSync(target, 'utf8');
-const fixedCondition = 'if (value === undefined) {';
 
-if (source.includes(fixedCondition)) {
+const preservesExplicitNull = () => {
+  delete require.cache[require.resolve(target)];
+
+  const { removeUndefinedFromRecord } = require(target);
+  const result = removeUndefinedFromRecord({
+    explicitNull: null,
+    omitted: undefined,
+    nested: {
+      explicitNull: null,
+      omitted: undefined,
+    },
+  });
+
+  return (
+    Object.hasOwn(result, 'explicitNull') &&
+    result.explicitNull === null &&
+    !Object.hasOwn(result, 'omitted') &&
+    Object.hasOwn(result, 'nested') &&
+    Object.hasOwn(result.nested, 'explicitNull') &&
+    result.nested.explicitNull === null &&
+    !Object.hasOwn(result.nested, 'omitted')
+  );
+};
+
+if (preservesExplicitNull()) {
   console.log(`${target} already preserves explicit null values`);
   process.exit(0);
 }
 
 const buggyCondition = 'if (!(0, utils_1.isDefined)(value)) {';
+const fixedCondition = 'if (value === undefined) {';
 
 if (!source.includes(buggyCondition)) {
-  throw new Error(`${target} does not contain the expected null-stripping code`);
+  throw new Error(
+    `${target} strips explicit null values but does not contain the expected buggy implementation`,
+  );
 }
 
 fs.writeFileSync(target, source.replace(buggyCondition, fixedCondition));
+
+if (!preservesExplicitNull()) {
+  throw new Error(`${target} still strips explicit null values after patching`);
+}
+
 console.log(`Patched ${target} to preserve explicit null values`);
