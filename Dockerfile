@@ -1,4 +1,4 @@
-FROM twentycrm/twenty:latest
+FROM twentycrm/twenty@sha256:45d4220dbafb7a6cfdd9112c2a46303f8e8087f5f1cac9f22483ad17572ace9d
 
 USER root
 
