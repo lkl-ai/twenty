@@ -62,10 +62,11 @@ if (preservesExplicitNull()) {
   process.exit(0);
 }
 
-const buggyCondition = 'if (!(0, utils_1.isDefined)(value)) {';
+const buggyCondition =
+  /if\s*\(\s*!\s*(?:(?:\(\s*0\s*,\s*[\w$.]*isDefined\s*\))|[\w$.]*isDefined)\s*\(\s*value\s*\)\s*\)\s*\{/;
 const fixedCondition = 'if (value === undefined) {';
 
-if (!source.includes(buggyCondition)) {
+if (!buggyCondition.test(source)) {
   throw new Error(
     `${target} strips explicit null values but does not contain the expected buggy implementation`,
   );
