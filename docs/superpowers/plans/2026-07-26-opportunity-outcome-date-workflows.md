@@ -4,7 +4,7 @@
 
 **Goal:** Create, activate, and live-test three production Twenty workflows that maintain Opportunity `wonAt` and `lostAt` on genuine status transitions.
 
-**Architecture:** Use Twenty's public GraphQL API with an existing active administrator API key so all changes pass through application validation, trigger synchronization, and cache invalidation. Build drafts first, verify their stored definitions, activate only valid versions, and exercise the workflows with a dedicated disposable Opportunity. Preserve the unrelated **Close Lost** draft unchanged.
+**Architecture:** Use Twenty's public GraphQL API with an existing active administrator API key so all changes pass through application validation, trigger synchronization, and cache invalidation. Build drafts first, verify their stored definitions, activate only valid versions, and exercise the workflows with a dedicated disposable Opportunity. Preserve the unrelated **Close Lost** draft unchanged. If live testing exposes a server defect that prevents explicit nullable-field clears, fix it with a focused regression test, merge it, wait for the production deployment, and rerun the matrix.
 
 **Tech Stack:** Twenty GraphQL API, Railway CLI, Node.js, PostgreSQL read-only verification, Twenty workflow engine
 
@@ -205,6 +205,10 @@ fields = ["status"]
 
 **Files:**
 - Modify temporarily: `.context/opportunity-outcome-workflows.mjs`
+- Modify:
+  `packages/twenty-server/src/engine/core-modules/record-crud/utils/remove-undefined-from-record.util.ts`
+- Create:
+  `packages/twenty-server/src/engine/core-modules/record-crud/utils/__tests__/remove-undefined-from-record.util.spec.ts`
 
 - [ ] **Step 1: Verify win stamping**
 
@@ -220,6 +224,12 @@ the exact saved `wonAt` value is unchanged.
 
 Transition WON to OPEN, poll until both `wonAt` and `lostAt` are null, and
 assert both fields remain null.
+
+If the filter and Update Record step complete but a nullable field remains set,
+trace the value through `UpdateRecordWorkflowAction` and `UpdateRecordService`.
+Add a failing unit test proving that `removeUndefinedFromRecord` must remove
+`undefined` while preserving explicit `null`, make the smallest correction,
+and verify the focused test before merging and deploying.
 
 - [ ] **Step 4: Verify loss stamping**
 
@@ -254,6 +264,10 @@ pre-existing Opportunity.
 **Files:**
 - Verify: `docs/superpowers/specs/2026-07-26-opportunity-outcome-date-workflows-design.md`
 - Verify: `docs/superpowers/plans/2026-07-26-opportunity-outcome-date-workflows.md`
+- Verify:
+  `packages/twenty-server/src/engine/core-modules/record-crud/utils/remove-undefined-from-record.util.ts`
+- Verify:
+  `packages/twenty-server/src/engine/core-modules/record-crud/utils/__tests__/remove-undefined-from-record.util.spec.ts`
 
 - [ ] **Step 1: Run repository verification**
 
@@ -264,7 +278,8 @@ git diff --check origin/main...
 git status --short
 ```
 
-Expected: no whitespace errors and only the approved documentation commits.
+Expected: no whitespace errors and only the approved documentation plus the
+focused null-preservation fix and regression test.
 
 - [ ] **Step 2: Commit the implementation plan**
 
@@ -278,7 +293,8 @@ git commit -m "docs: plan opportunity outcome workflows"
 - [ ] **Step 3: Push and open a PR**
 
 Push `stamp-opportunity-outcome-dates` and open a PR against `main` describing
-the live workflow configuration and acceptance evidence.
+the live workflow configuration, null-preservation fix, and acceptance
+evidence.
 
 - [ ] **Step 4: Request required Gemini review**
 
@@ -289,5 +305,6 @@ perform and record a self-review before merging.
 - [ ] **Step 5: Merge and verify**
 
 Merge only after checks pass and the Gemini wait or self-review requirement is
-satisfied. Confirm the PR state is MERGED and the production workflows remain
-ACTIVE after the merge.
+satisfied. Confirm the PR state is MERGED, wait for the corrected server build
+to reach Railway production, rerun the full live acceptance matrix, and confirm
+the production workflows remain ACTIVE.

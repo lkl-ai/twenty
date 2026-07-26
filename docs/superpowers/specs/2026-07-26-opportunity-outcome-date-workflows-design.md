@@ -19,10 +19,18 @@ Create and activate the workflows through Twenty's GraphQL API using an
 existing active administrator API key. This keeps workflow validation,
 automated-trigger registration, cache invalidation, and audit behavior inside
 Twenty's application services. Do not write workflow rows directly in
-Postgres, create another API key, or deploy new server code.
+Postgres or create another API key.
 
 Create all three workflows as drafts first. Validate and inspect their complete
 definitions and registered trigger settings before activation.
+
+Live acceptance exposed an existing server defect in the Update Record action:
+`removeUndefinedFromRecord` used `isDefined`, which removes both `undefined`
+and explicit `null` values. As a result, an action could report success while
+silently dropping a requested nullable-field clear. Correct the utility to
+remove only `undefined`, preserve `null` as its own contract requires, and add
+a focused regression test. The workflow definitions remain unchanged; rerun
+the live matrix after the corrected server build reaches production.
 
 ## Shared trigger
 
@@ -98,6 +106,8 @@ Update Record action's `objectRecord` or `fieldsToUpdate`.
   edges, and confirm each automated trigger watches only `status`.
 - After activation, inspect workflow runs for failed steps before declaring the
   configuration complete.
+- Preserve explicit `null` values in tool and workflow record updates while
+  continuing to remove `undefined` values, including inside composite fields.
 
 ## Verification
 
