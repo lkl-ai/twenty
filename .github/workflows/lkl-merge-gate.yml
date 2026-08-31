@@ -1,0 +1,18 @@
+name: LKL merge gate
+
+# Thin required check for the lkl-ai fork. Upstream Twenty CI is not the
+# merge-queue gate — this job only has to report on merge_group SHAs.
+
+on:
+  pull_request:
+  merge_group:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
